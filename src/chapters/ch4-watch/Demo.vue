@@ -137,14 +137,10 @@
 import { computed, watch } from 'vue' // ✅ 删除了不再需要的 ref, nextTick
 import { useChapter4Store } from '@/stores/chapter4'
 import { sourceCode } from './data'
-// ✅ 引入公共组件
+
 import CodePanel from '@/components/CodePanel.vue'
 import StepDesc from '@/components/StepDesc.vue'
 const store = useChapter4Store()
-// ❌ 删除了原本的 kw, types 数组和 highlight 函数
-// ❌ 删除了原本的 highlightedLines 计算属性
-// ❌ 删除了原本的 codeRef 和 watch 滚动监听
-// ✅ 保留该章节特有的计算属性和交互逻辑
 const hl = computed(() => store.currentStepData?.highlight || {})
 // 步骤3时自动演示 traverse
 watch(() => store.currentStep, (val) => {
@@ -158,9 +154,8 @@ function handleNext() {
 .demo-layout { display: flex; flex-direction: column; gap: 1rem; }
 .main-grid { display: grid; grid-template-columns: 1fr 380px; gap: 1.25rem; }
 .left-col, .right-col { display: flex; flex-direction: column; gap: 1rem; }
-/* ❌ 删除了所有关于 .code-panel, .code-header, .code-body, .code-line, .line-no 的样式 */
-/* ❌ 删除了所有关于 .step-desc, .desc-head, .desc-badge, .desc-text, .desc-detail 的样式 */
-/* ✅ 保留右侧可视化面板的样式 */
+
+
 .viz-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
 .viz-head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
 .viz-head i { color: var(--accent); font-size: 0.7rem; }
