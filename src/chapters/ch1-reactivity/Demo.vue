@@ -3,43 +3,12 @@
     <div class="main-grid">
       <!-- 左栏：代码 + 说明 -->
       <div class="left-col">
-        <!-- 代码面板 -->
-        <div class="code-panel">
-          <div class="code-header">
-            <div class="code-dots">
-              <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-            </div>
-            <span class="code-filename">mini-vue.js</span>
-            <span class="lines-tag" v-if="store.activeLines.length">
-              L{{ store.activeLines[0] + 1 }}-L{{ store.activeLines[store.activeLines.length - 1] + 1 }}
-            </span>
-          </div>
-          <div class="code-body" ref="codeRef">
-            <div v-for="(line, idx) in highlightedLines" :key="idx"
-              class="code-line"
-              :class="{ active: store.activeLines.includes(idx), dim: store.activeLines.length > 0 && !store.activeLines.includes(idx) }">
-              <span class="line-no">{{ idx + 1 }}</span>
-              <span v-html="line"></span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 步骤说明 -->
-        <Transition name="v" mode="out-in">
-          <div class="step-desc" v-if="store.currentStepData" :key="store.currentStep">
-            <div class="desc-head">
-              <div class="desc-badge" :style="{ background: store.currentStepData.color + '18', color: store.currentStepData.color }">
-                {{ store.currentStep }}
-              </div>
-              <h3>{{ store.currentStepData.title }}</h3>
-            </div>
-            <p class="desc-text">{{ store.currentStepData.desc }}</p>
-            <div class="desc-detail">{{ store.currentStepData.detail }}</div>
-          </div>
-        </Transition>
+        <!-- ✅ 替换为公共代码组件，传入源码、高亮行和文件名 -->
+        <CodePanel :sourceCode="sourceCode" :activeLines="store.activeLines" filename="mini-vue.js" />
+        <!-- ✅ 替换为公共说明组件，传入当前步骤数据 -->
+        <StepDesc :step="store.currentStepData" />
       </div>
-
-      <!-- 右栏：可视化 -->
+      <!-- 右栏：可视化 (完全保持原样) -->
       <div class="right-col">
         <!-- 数据面板 -->
         <div class="viz-card">
@@ -55,7 +24,6 @@
             <div class="d-kw">})</div>
           </div>
         </div>
-
         <!-- 依赖图 -->
         <div class="viz-card">
           <div class="viz-head"><i class="fa-solid fa-diagram-project"></i><h4>依赖关系图</h4></div>
@@ -87,7 +55,6 @@
             </div>
           </div>
         </div>
-
         <!-- 操作区 -->
         <div class="viz-card action">
           <button class="inc-btn" :class="{ pulse: store.canIncrement }" @click="store.increment()" :disabled="!store.canIncrement">
@@ -109,7 +76,6 @@
         </div>
       </div>
     </div>
-
     <!-- 底部控制栏 -->
     <div class="controls">
       <button class="ctrl-btn outline" @click="store.prevStep()" :disabled="store.currentStep <= 1">
@@ -128,88 +94,37 @@
     </div>
   </div>
 </template>
-
 <script setup>
-import { computed, ref, watch, nextTick } from 'vue'
+import { computed } from 'vue' // ✅ 删除了不再需要的 ref, watch, nextTick
 import { useChapter1Store } from '@/stores/chapter1'
 import { sourceCode } from './data'
-
+// ✅ 引入公共组件
+import CodePanel from '@/components/CodePanel.vue'
+import StepDesc from '@/components/StepDesc.vue'
 const store = useChapter1Store()
-const codeRef = ref(null)
-
-// 语法高亮
-const kw = ['let','const','var','function','return','if','new','true','false','null']
-const types = ['WeakMap','Map','Set','Proxy']
-const fns = ['effect','track','trigger','reactive','get','set','forEach','add','querySelector']
-
-function highlight(line) {
-  let h = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-  if (h.trimStart().startsWith('//')) return `<span style="color:#4a6e5e;font-style:italic">${h}</span>`
-  h = h.replace(/\$\{([^}]+)\}/g, '<span style="color:#34d399">${$1}</span>')
-  h = h.replace(/(`[^`]*`)/g, '<span style="color:#f0a85e">$1</span>')
-  h = h.replace(/('[^']*')/g, '<span style="color:#f0a85e">$1</span>')
-  types.forEach(t => { h = h.replace(new RegExp(`\\b(${t})\\b`,'g'), '<span style="color:#60a5fa">$1</span>') })
-  fns.forEach(f => { h = h.replace(new RegExp(`\\b(${f})\\b`,'g'), '<span style="color:#fbbf24">$1</span>') })
-  kw.forEach(k => { h = h.replace(new RegExp(`\\b(${k})\\b`,'g'), '<span style="color:#7dd3a8">$1</span>') })
-  h = h.replace(/\b(\d+)\b/g, '<span style="color:#f472b6">$1</span>')
-  return h
-}
-
-const highlightedLines = computed(() => sourceCode.split('\n').map(l => highlight(l)))
+// ❌ 删除了原本的 kw, types 数组和 highlight 函数
+// ❌ 删除了原本的 highlightedLines 计算属性
+// ❌ 删除了原本的 codeRef 和 watch 滚动监听
+// ✅ 保留该章节特有的计算属性
 const hl = computed(() => store.currentStepData?.highlight || {})
-
-// 自动滚动
-watch(() => store.activeLines, async () => {
-  await nextTick()
-  const el = codeRef.value?.querySelector('.code-line.active')
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-})
 </script>
-
 <style scoped>
 .demo-layout { display: flex; flex-direction: column; gap: 1rem; }
 .main-grid { display: grid; grid-template-columns: 1fr 380px; gap: 1.25rem; }
 .left-col, .right-col { display: flex; flex-direction: column; gap: 1rem; }
-
-/* 代码面板 */
-.code-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.code-header { display: flex; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border); gap: 10px; }
-.code-dots { display: flex; gap: 6px; }
-.dot { width: 10px; height: 10px; border-radius: 50%; }
-.dot.r { background: rgba(239,68,68,0.7); }
-.dot.y { background: rgba(245,158,11,0.7); }
-.dot.g { background: rgba(16,185,129,0.7); }
-.code-filename { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
-.lines-tag { margin-left: auto; font-family: var(--font-mono); font-size: 0.62rem; color: var(--accent); background: var(--accent-dim); padding: 2px 8px; border-radius: 4px; }
-.code-body { padding: 14px; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.7; max-height: 480px; overflow: auto; }
-.code-line { padding: 1px 0 1px 12px; border-left: 3px solid transparent; transition: all 0.3s; white-space: pre; }
-.code-line.active { background: rgba(16,185,129,0.06); border-left-color: var(--accent); }
-.code-line.dim { opacity: 0.3; }
-.line-no { display: inline-block; width: 26px; text-align: right; margin-right: 14px; color: #2a4a3a; font-size: 0.62rem; user-select: none; }
-
-/* 说明 */
-.step-desc { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 10px; }
-.desc-head { display: flex; align-items: center; gap: 10px; }
-.desc-badge { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; font-family: var(--font-mono); }
-.desc-head h3 { font-size: 0.92rem; font-weight: 700; }
-.desc-text { color: var(--muted); font-size: 0.82rem; line-height: 1.65; }
-.desc-detail { background: rgba(7,11,9,0.6); border-radius: var(--radius-sm); padding: 12px; font-family: var(--font-mono); font-size: 0.72rem; color: rgba(16,185,129,0.75); line-height: 1.6; white-space: pre-wrap; }
-
-/* 可视化卡片 */
+/* ❌ 删除了所有关于 .code-panel, .code-header, .code-body, .code-line, .line-no 的样式 */
+/* ❌ 删除了所有关于 .step-desc, .desc-head, .desc-badge, .desc-text, .desc-detail 的样式 */
+/* ✅ 保留右侧可视化面板的样式 */
 .viz-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
 .viz-head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
 .viz-head i { color: var(--accent); font-size: 0.7rem; }
 .viz-head h4 { font-size: 0.82rem; font-weight: 700; }
-
-/* 数据面板 */
 .data-box { background: rgba(7,11,9,0.6); border-radius: var(--radius-sm); padding: 14px; font-family: var(--font-mono); font-size: 0.82rem; }
 .d-kw { color: var(--muted); font-size: 0.68rem; }
 .d-prop { padding-left: 16px; display: flex; align-items: center; gap: 6px; margin: 6px 0; }
 .d-key { color: var(--amber); }
 .d-colon { color: var(--muted); }
 .d-val { color: var(--crimson); font-weight: 700; font-size: 1.15rem; }
-
-/* 依赖图 */
 .graph { display: flex; flex-direction: column; gap: 0; }
 .g-node { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; background: rgba(7,11,9,0.4); transition: all 0.3s; }
 .g-node.hl { border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.04); }
@@ -229,8 +144,6 @@ watch(() => store.activeLines, async () => {
 .g-conn::after { content: ''; width: 2px; height: 16px; border-radius: 1px; background: var(--border); transition: background 0.4s; }
 .g-conn.active::after { background: var(--accent); }
 .g-conn.trigger::after { background: var(--crimson); }
-
-/* 操作区 */
 .action { display: flex; flex-direction: column; gap: 10px; }
 .inc-btn { width: 100%; padding: 11px; border-radius: var(--radius-sm); border: none; background: linear-gradient(135deg,#059669,#10b981); color: white; font-weight: 700; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.3s; box-shadow: 0 2px 12px rgba(16,185,129,0.2); }
 .inc-btn:hover:not(:disabled) { box-shadow: 0 4px 20px rgba(16,185,129,0.35); transform: translateY(-1px); }
@@ -247,7 +160,6 @@ watch(() => store.activeLines, async () => {
 .l-to { color: var(--accent); }
 .l-time { margin-left: auto; color: rgba(94,138,118,0.3); font-size: 0.58rem; }
 .logs-empty { text-align: center; padding: 8px; font-size: 0.68rem; color: rgba(94,138,118,0.3); }
-
 /* 控制栏 */
 .controls {
   position: sticky; bottom: 0; z-index: 50; border-top: 1px solid var(--border);
@@ -265,9 +177,7 @@ watch(() => store.activeLines, async () => {
 .s-tab { padding: 5px 10px; border-radius: 5px; font-size: 0.68rem; font-weight: 500; border: none; background: transparent; color: var(--muted); cursor: pointer; transition: all 0.3s; white-space: nowrap; font-family: var(--font-mono); }
 .s-tab:disabled { opacity: 0.35; cursor: not-allowed; }
 .s-tab.current { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(16,185,129,0.3); }
-
 @keyframes pulse-ring { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.3)}50%{box-shadow:0 0 16px 4px rgba(16,185,129,0.12)} }
-
 @media (max-width: 1024px) {
   .main-grid { grid-template-columns: 1fr; }
   .step-tabs { display: none; }

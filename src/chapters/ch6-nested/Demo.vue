@@ -1,35 +1,14 @@
 <template>
   <div class="demo-layout">
     <div class="main-grid">
-      <!-- 左栏：代码 -->
+      <!-- 左栏：代码 + 说明 -->
       <div class="left-col">
-        <div class="code-panel">
-          <div class="code-header">
-            <div class="code-dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
-            <span class="code-filename">nested-effect.js</span>
-            <span class="lines-tag" v-if="store.activeLines.length">L{{ store.activeLines[0]+1 }}-L{{ store.activeLines[store.activeLines.length-1]+1 }}</span>
-          </div>
-          <div class="code-body" ref="codeRef">
-            <div v-for="(line, idx) in highlightedLines" :key="idx" class="code-line"
-              :class="{ active: store.activeLines.includes(idx), dim: store.activeLines.length > 0 && !store.activeLines.includes(idx) }">
-              <span class="line-no">{{ idx + 1 }}</span>
-              <span v-html="line"></span>
-            </div>
-          </div>
-        </div>
-        <Transition name="v" mode="out-in">
-          <div class="step-desc" v-if="store.currentStepData" :key="store.currentStep">
-            <div class="desc-head">
-              <div class="desc-badge" :style="{ background: store.currentStepData.color+'18', color: store.currentStepData.color }">{{ store.currentStep }}</div>
-              <h3>{{ store.currentStepData.title }}</h3>
-            </div>
-            <p class="desc-text">{{ store.currentStepData.desc }}</p>
-            <div class="desc-detail">{{ store.currentStepData.detail }}</div>
-          </div>
-        </Transition>
+        <!-- ✅ 替换为公共代码组件 -->
+        <CodePanel :sourceCode="sourceCode" :activeLines="store.activeLines" filename="nested-effect.js" />
+        <!-- ✅ 替换为公共说明组件 -->
+        <StepDesc :step="store.currentStepData" />
       </div>
-
-      <!-- 右栏：可视化 -->
+      <!-- 右栏：可视化 (完全保持原样) -->
       <div class="right-col">
         <!-- 组件树映射 -->
         <div class="viz-card">
@@ -48,7 +27,6 @@
             </div>
           </div>
         </div>
-
         <!-- EffectStack 栈可视化 -->
         <div class="viz-card">
           <div class="viz-head"><i class="fa-solid fa-layer-group"></i><h4>EffectStack 栈状态</h4></div>
@@ -87,7 +65,6 @@
             </div>
           </div>
         </div>
-
         <!-- 触发验证 -->
         <div class="viz-card" :class="{ verified: store.isTriggering }">
           <div class="viz-head"><i class="fa-solid fa-bullseye"></i><h4>触发验证</h4></div>
@@ -114,7 +91,6 @@
             </div>
           </div>
         </div>
-
         <!-- 操作区 -->
         <div class="viz-card action">
           <button class="act-btn" :class="{ pulse: store.canInteract }" @click="store.simulateChangeText()" :disabled="!store.canInteract">
@@ -134,7 +110,6 @@
         </div>
       </div>
     </div>
-
     <!-- 控制栏 -->
     <div class="controls">
       <button class="ctrl-btn outline" @click="store.prevStep()" :disabled="store.currentStep <= 1"><i class="fa-solid fa-chevron-left"></i> 上一步</button>
@@ -148,77 +123,30 @@
     </div>
   </div>
 </template>
-
 <script setup>
-import { computed, ref, watch, nextTick } from 'vue'
+import { computed } from 'vue' // ✅ 删除了不再需要的 ref, watch, nextTick
 import { useChapter6Store } from '@/stores/chapter6'
 import { sourceCode } from './data'
-
+// ✅ 引入公共组件
+import CodePanel from '@/components/CodePanel.vue'
+import StepDesc from '@/components/StepDesc.vue'
 const store = useChapter6Store()
-const codeRef = ref(null)
-
-const kw = ['let','const','var','function','return','if','new','true','false','null']
-const types = ['WeakMap','Map','Set','Proxy']
-const fns = ['effect','track','trigger','reactive','push','pop']
-
-function highlight(line) {
-  let h = line.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-  if (h.trimStart().startsWith('//')) return `<span style="color:#4a6e5e;font-style:italic">${h}</span>`
-  h = h.replace(/\$\{([^}]+)\}/g, '<span style="color:#34d399">${$1}</span>')
-  h = h.replace(/(`[^`]*`)/g, '<span style="color:#f0a85e">$1</span>')
-  h = h.replace(/('[^']*')/g, '<span style="color:#f0a85e">$1</span>')
-  types.forEach(t => { h = h.replace(new RegExp(`\\b(${t})\\b`,'g'), '<span style="color:#60a5fa">$1</span>') })
-  fns.forEach(f => { h = h.replace(new RegExp(`\\b(${f})\\b`,'g'), '<span style="color:#fbbf24">$1</span>') })
-  kw.forEach(k => { h = h.replace(new RegExp(`\\b(${k})\\b`,'g'), '<span style="color:#7dd3a8">$1</span>') })
-  h = h.replace(/\b(\d+)\b/g, '<span style="color:#f472b6">$1</span>')
-  return h
-}
-
-const highlightedLines = computed(() => sourceCode.split('\n').map(l => highlight(l)))
-
-watch(() => store.activeLines, async () => {
-  await nextTick()
-  const el = codeRef.value?.querySelector('.code-line.active')
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-})
+// ❌ 删除了原本的 kw, types 数组和 highlight 函数
+// ❌ 删除了原本的 highlightedLines 计算属性
+// ❌ 删除了原本的 codeRef 和 watch 滚动监听
 </script>
-
 <style scoped>
 .demo-layout { display: flex; flex-direction: column; gap: 1rem; }
 .main-grid { display: grid; grid-template-columns: 1fr 380px; gap: 1.25rem; }
 .left-col, .right-col { display: flex; flex-direction: column; gap: 1rem; }
-
-/* 代码面板 */
-.code-panel { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.code-header { display: flex; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border); gap: 10px; }
-.code-dots { display: flex; gap: 6px; }
-.dot { width: 10px; height: 10px; border-radius: 50%; }
-.dot.r { background: rgba(239,68,68,0.7); }
-.dot.y { background: rgba(245,158,11,0.7); }
-.dot.g { background: rgba(16,185,129,0.7); }
-.code-filename { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); }
-.lines-tag { margin-left: auto; font-family: var(--font-mono); font-size: 0.62rem; color: var(--accent); background: var(--accent-dim); padding: 2px 8px; border-radius: 4px; }
-.code-body { padding: 14px; font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.7; max-height: 520px; overflow: auto; }
-.code-line { padding: 1px 0 1px 12px; border-left: 3px solid transparent; transition: all 0.3s; white-space: pre; }
-.code-line.active { background: rgba(16,185,129,0.06); border-left-color: var(--accent); }
-.code-line.dim { opacity: 0.3; }
-.line-no { display: inline-block; width: 26px; text-align: right; margin-right: 14px; color: #2a4a3a; font-size: 0.62rem; user-select: none; }
-
-/* 说明 */
-.step-desc { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 10px; }
-.desc-head { display: flex; align-items: center; gap: 10px; }
-.desc-badge { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; font-family: var(--font-mono); }
-.desc-head h3 { font-size: 0.92rem; font-weight: 700; }
-.desc-text { color: var(--muted); font-size: 0.82rem; line-height: 1.65; }
-.desc-detail { background: rgba(7,11,9,0.6); border-radius: var(--radius-sm); padding: 12px; font-family: var(--font-mono); font-size: 0.72rem; color: rgba(16,185,129,0.75); line-height: 1.6; white-space: pre-wrap; }
-
-/* 可视化卡片 */
+/* ❌ 删除了所有关于 .code-panel, .code-header, .code-body, .code-line, .line-no 的样式 */
+/* ❌ 删除了所有关于 .step-desc, .desc-head, .desc-badge, .desc-text, .desc-detail 的样式 */
+/* ✅ 保留右侧可视化面板的样式 */
 .viz-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; transition: all 0.3s; }
 .viz-card.verified { border-color: rgba(16,185,129,0.4); box-shadow: 0 0 20px rgba(16,185,129,0.08); }
 .viz-head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
 .viz-head i { color: var(--accent); font-size: 0.7rem; }
 .viz-head h4 { font-size: 0.82rem; font-weight: 700; }
-
 /* 组件树 */
 .component-tree { display: flex; flex-direction: column; align-items: center; gap: 0; }
 .comp-node { display: flex; align-items: center; gap: 8px; background: rgba(7,11,9,0.6); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 16px; width: 100%; transition: all 0.3s; opacity: 0.4; }
@@ -230,7 +158,6 @@ watch(() => store.activeLines, async () => {
 .comp-name { font-size: 0.78rem; font-weight: 600; flex: 1; }
 .comp-effect { font-family: var(--font-mono); font-size: 0.68rem; color: var(--muted); background: rgba(7,11,9,0.6); padding: 2px 8px; border-radius: 4px; }
 .tree-line { width: 2px; height: 16px; background: var(--border); }
-
 /* EffectStack 栈 */
 .stack-container { display: flex; flex-direction: column; gap: 12px; }
 .stack-vis { 
@@ -250,23 +177,19 @@ watch(() => store.activeLines, async () => {
 .frame-index { font-family: var(--font-mono); font-size: 0.58rem; color: rgba(94,138,118,0.4); }
 .frame-name { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 600; color: var(--fg); flex: 1; }
 .active-tag { font-size: 0.58rem; color: var(--accent); white-space: nowrap; display: flex; align-items: center; gap: 4px; }
-
 @keyframes slide-in { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @keyframes slide-out { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-20px); opacity: 0; } }
-
 .stack-ops { display: flex; flex-direction: column; gap: 6px; }
 .op-item { display: flex; align-items: center; gap: 8px; background: rgba(7,11,9,0.6); border-radius: 6px; padding: 6px 10px; border: 1px solid transparent; transition: all 0.3s; }
 .op-item.active { border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.06); }
 .op-fn { font-family: var(--font-mono); font-size: 0.65rem; font-weight: 600; color: var(--accent); }
 .op-desc { font-size: 0.6rem; color: var(--muted); }
-
 /* 触发验证 */
 .verify-area { display: flex; flex-direction: column; gap: 10px; }
 .verify-state { font-family: var(--font-mono); font-size: 0.82rem; display: flex; align-items: center; gap: 6px; background: rgba(7,11,9,0.6); padding: 8px 12px; border-radius: 6px; }
 .v-key { color: var(--amber); }
 .v-colon { color: var(--muted); }
 .v-val { color: var(--accent); font-weight: 600; }
-
 .verify-effect { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .ve-item { 
   background: rgba(7,11,9,0.6); border: 1px solid var(--border); border-radius: 6px; padding: 8px; 
@@ -279,9 +202,7 @@ watch(() => store.activeLines, async () => {
 .ve-status.idle { color: rgba(94,138,118,0.4); }
 .ve-status.miss { color: var(--muted); text-decoration: line-through; }
 .ve-status.fire { color: var(--accent); animation: flash-text 0.6s ease; }
-
 @keyframes flash-text { 0%,100%{opacity:1}50%{opacity:0.3} }
-
 /* 操作区 */
 .action { display: flex; flex-direction: column; gap: 10px; }
 .act-btn {
@@ -293,7 +214,6 @@ watch(() => store.activeLines, async () => {
 .act-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .act-btn:hover:not(:disabled) { box-shadow: 0 4px 20px rgba(16,185,129,0.35); transform: translateY(-1px); }
 .act-btn.pulse { animation: pulse-ring 2s ease-in-out infinite; }
-
 .logs-head { font-size: 0.68rem; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
 .logs-list { display: flex; flex-direction: column; gap: 3px; max-height: 120px; overflow-y: auto; }
 .log-item { background: rgba(7,11,9,0.6); border-radius: 5px; padding: 5px 8px; font-family: var(--font-mono); font-size: 0.6rem; display: flex; align-items: center; gap: 5px; }
@@ -304,14 +224,12 @@ watch(() => store.activeLines, async () => {
 .l-detail { color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .l-time { color: rgba(94,138,118,0.3); font-size: 0.5rem; white-space: nowrap; }
 .logs-empty { text-align: center; padding: 8px; font-size: 0.68rem; color: rgba(94,138,118,0.3); }
-
 /* Vue TransitionGroup */
 .stack-enter-active { transition: all 0.4s ease-out; }
 .stack-leave-active { transition: all 0.3s ease-in; position: absolute; }
 .stack-enter-from { opacity: 0; transform: translateX(20px); }
 .stack-leave-to { opacity: 0; transform: translateX(-20px); }
 .stack-move { transition: transform 0.3s ease; }
-
 /* 控制栏 */
 .controls { position: sticky; bottom: 0; z-index: 50; border-top: 1px solid var(--border); backdrop-filter: blur(20px); background: rgba(7,11,9,0.85); border-radius: var(--radius); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 0.5rem; }
 .ctrl-btn { padding: 9px 18px; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.3s; white-space: nowrap; }
@@ -324,8 +242,6 @@ watch(() => store.activeLines, async () => {
 .s-tab { padding: 5px 10px; border-radius: 5px; font-size: 0.68rem; font-weight: 500; border: none; background: transparent; color: var(--muted); cursor: pointer; transition: all 0.3s; white-space: nowrap; font-family: var(--font-mono); }
 .s-tab:disabled { opacity: 0.35; cursor: not-allowed; }
 .s-tab.current { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(16,185,129,0.3); }
-
 @keyframes pulse-ring { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.3)}50%{box-shadow:0 0 16px 4px rgba(16,185,129,0.12)} }
-
 @media (max-width: 1024px) { .main-grid { grid-template-columns: 1fr; } .step-tabs { display: none; } }
 </style>
