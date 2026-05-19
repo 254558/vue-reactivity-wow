@@ -8,5 +8,6 @@ npm i
 # 启动开发服务
 npm run dev
 ```
+![alt text](image-1.png)
 ![alt text](image.png)
 
