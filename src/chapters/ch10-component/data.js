@@ -104,6 +104,8 @@ export const steps = [
     detail: '1. const subTree = render()\n2. patch(null, subTree, container)\n3. isMounted = true\n\n组件 VNode 只是壳，subTree 才是真实的 DOM 结构',
     color: '#10b981',
     lines: [46, 47, 48, 49, 50, 51, 52],
+    // ✅ 到达此步骤解锁挂载按钮
+    unlock: 'mount', 
     highlight: { instance: true, setup: false, mount: true, update: false },
   },
   {
@@ -124,6 +126,8 @@ export const steps = [
     detail: 'const prevTree = instance.subTree\nconst nextTree = render()\ninstance.subTree = nextTree\n\npatch(prevTree, nextTree)\n  → 只更新变化的部分 DOM\n\n数据驱动视图的完整链路闭环！',
     color: '#ef4444',
     lines: [60,61,62,63,64],
+    // ✅ 到达此步骤解锁所有交互（父组件更新、子组件更新）
+    unlock: 'interact', 
     highlight: { instance: true, setup: false, mount: false, update: true },
   },
 ]
