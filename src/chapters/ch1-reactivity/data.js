@@ -72,7 +72,7 @@ export const steps = [
     desc: '调用 reactive({ count: 0 }) 创建响应式对象 state。此后对 state 属性的访问和修改都将被拦截。',
     detail: 'state.count → 触发 get 拦截器\nstate.count = 1 → 触发 set 拦截器',
     color: '#f59e0b',
-    lines: [46, 47],
+    lines: [46],
     highlight: { state: true, bucket: false, effect: false },
   },
   {
@@ -88,7 +88,7 @@ export const steps = [
     desc: 'effectFn 读取 state.count 时，get 拦截器调用 track()，将 activeEffect 存入 bucket 对应属性的依赖集合。',
     detail: 'bucket 结构:\n  WeakMap {\n    state → Map {\n      "count" → Set { effectFn }\n    }\n  }',
     color: '#10b981',
-    lines: [13, 14, 15, 16, 17, 18, 19, 20, 21],
+    lines: [13, 14, 15, 16, 17, 18, 19, 20],
     highlight: { state: true, bucket: true, effect: true },
   },
   {

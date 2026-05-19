@@ -1,16 +1,11 @@
 <template>
   <div class="demo-layout">
     <div class="main-grid">
-      <!-- 左栏：代码 + 说明 -->
       <div class="left-col">
-        <!-- ✅ 替换为公共代码组件，传入源码、高亮行和文件名 -->
-        <CodePanel :sourceCode="sourceCode" :activeLines="store.activeLines" filename="mini-vue.js" />
-        <!-- ✅ 替换为公共说明组件，传入当前步骤数据 -->
         <StepDesc :step="store.currentStepData" />
+        <CodePanel :sourceCode="sourceCode" :activeLines="store.activeLines" filename="mini-vue.js" />
       </div>
-      <!-- 右栏：可视化 (完全保持原样) -->
       <div class="right-col">
-        <!-- 数据面板 -->
         <div class="viz-card">
           <div class="viz-head"><i class="fa-solid fa-database"></i><h4>响应式数据</h4></div>
           <div class="data-box">
