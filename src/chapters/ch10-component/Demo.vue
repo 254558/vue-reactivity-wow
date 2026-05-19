@@ -3,9 +3,7 @@
     <div class="main-grid">
       <!-- 左栏：代码 + 说明 -->
       <div class="left-col">
-        <!-- ✅ 替换为公共代码组件 -->
         <CodePanel :sourceCode="sourceCode" :activeLines="store.activeLines" filename="component.js" />
-        <!-- ✅ 替换为公共说明组件 -->
         <StepDesc :step="store.currentStepData" />
       </div>
       <!-- 右栏：可视化 -->
@@ -50,7 +48,8 @@
                   </div>
                   <div class="inst-item">
                     <span class="inst-key">setupState</span>
-                    <span class="inst-val amber">{ count: ref(0) }</span>
+                    <!-- ✅ 修复：将 ref(0) 改为动态的 ref(store.childCount) -->
+                    <span class="inst-val amber">{ count: ref({{ store.childCount }}) }</span>
                   </div>
                   <div class="inst-item">
                     <span class="inst-key">render</span>
@@ -67,12 +66,16 @@
                     <div class="st-node">&lt;div&gt;
                       <div class="st-children">
                         <div class="st-node leaf">&lt;h2&gt; <span class="st-bind">{{ store.childPropTitle }}</span> &lt;/h2&gt;</div>
-                        <div class="st-node leaf">&lt;p&gt; <span class="st-bind">0</span> &lt;/p&gt;</div>
+                        <div class="st-node leaf">&lt;p&gt; <span class="st-bind">{{ store.childCount }}</span> &lt;/p&gt;</div>
                         <div class="st-node leaf">&lt;button&gt; Click &lt;/button&gt;</div>
                       </div>
                     </div>
                   </div>
                 </div>
+                <!-- ✅ 新增：子组件内部更新按钮 -->
+                <button class="act-btn child-btn" @click="store.simulateChildUpdate()" :disabled="!store.canInteract || store.isUpdating">
+                  <i class="fa-solid fa-bolt"></i> 触发内部更新 (count++)
+                </button>
               </div>
               <div class="instance-empty" v-else>
                 <i class="fa-solid fa-lock"></i> 执行 mountComponent 后创建实例
@@ -95,7 +98,7 @@
             <div class="logs-head"><i class="fa-solid fa-clock-rotate-left"></i> 渲染日志</div>
             <TransitionGroup name="fade" tag="div" class="logs-list">
               <div v-for="(log, i) in store.triggerLogs" :key="log.time + i" class="log-item">
-                <span class="l-type" :class="{ mount: log.type.includes('mount'), patch: log.type.includes('patch'), diff: log.type.includes('Diff') }">{{ log.type }}</span>
+                <span class="l-type" :class="{ mount: log.type.includes('mount'), patch: log.type.includes('patch'), diff: log.type.includes('Diff'), self: log.type.includes('updateSelf') }">{{ log.type }}</span>
                 <span class="l-detail">{{ log.detail }}</span>
                 <span class="l-time">{{ log.time }}</span>
               </div>
@@ -118,28 +121,34 @@
     </div>
   </div>
 </template>
+
 <script setup>
-import { useChapter10Store } from '@/stores/chapter10' // ✅ 删除了不再需要的 computed, ref, watch, nextTick
+import { useChapter10Store } from '@/stores/chapter10'
 import { sourceCode } from './data'
-// ✅ 引入公共组件
 import CodePanel from '@/components/CodePanel.vue'
 import StepDesc from '@/components/StepDesc.vue'
+
 const store = useChapter10Store()
-// ❌ 删除了原本的 kw, types 数组和 highlight 函数
-// ❌ 删除了原本的 highlightedLines 计算属性
-// ❌ 删除了原本的 codeRef 和 watch 滚动监听
 </script>
+
 <style scoped>
 .demo-layout { display: flex; flex-direction: column; gap: 1rem; }
 .main-grid { display: grid; grid-template-columns: 1fr 380px; gap: 1.25rem; }
 .left-col, .right-col { display: flex; flex-direction: column; gap: 1rem; }
-/* ❌ 删除了所有关于 .code-panel, .code-header, .code-body, .code-line, .line-no 的样式 */
-/* ❌ 删除了所有关于 .step-desc, .desc-head, .desc-badge, .desc-text, .desc-detail 的样式 */
-/* ✅ 保留右侧可视化面板的样式 */
+
+/* 右栏滚动优化 */
+.right-col { 
+  max-height: calc(100vh - 160px); 
+  overflow-y: auto; 
+  padding-right: 4px; 
+}
+
+/* 可视化卡片 */
 .viz-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
 .viz-head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
 .viz-head i { color: var(--accent); font-size: 0.7rem; }
 .viz-head h4 { font-size: 0.82rem; font-weight: 700; }
+
 /* 组件树 */
 .comp-tree { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
 .comp-node { 
@@ -161,6 +170,7 @@ const store = useChapter10Store()
 .state-key { color: var(--muted); }
 .state-colon { color: rgba(94,138,118,0.4); }
 .state-val { color: #f59e0b; font-weight: 700; }
+
 /* 连接线 */
 .tree-connector { display: flex; flex-direction: column; align-items: center; padding: 4px 0; position: relative; }
 .connector-line { width: 2px; height: 16px; background: var(--border); }
@@ -171,6 +181,7 @@ const store = useChapter10Store()
 }
 .connector-props.flowing { color: #8b5cf6; background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.3); }
 .connector-props i { font-size: 0.5rem; }
+
 /* 组件实例 */
 .instance-box { 
   margin-top: 8px; background: rgba(7,11,9,0.6); border-radius: 6px; padding: 10px;
@@ -200,6 +211,7 @@ const store = useChapter10Store()
   color: rgba(94,138,118,0.3); font-size: 0.68rem;
   display: flex; align-items: center; justify-content: center; gap: 6px;
 }
+
 /* 操作区 */
 .action { display: flex; flex-direction: column; gap: 10px; }
 .action-label { font-size: 0.68rem; color: var(--muted); }
@@ -221,9 +233,11 @@ const store = useChapter10Store()
 .l-type.mount { background: rgba(16,185,129,0.1); color: var(--accent); }
 .l-type.patch { background: rgba(139,92,246,0.1); color: #8b5cf6; }
 .l-type.diff { background: rgba(239,68,68,0.1); color: var(--crimson); }
+.l-type.self { background: rgba(245,158,11,0.1); color: #f59e0b; }
 .l-detail { color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .l-time { color: rgba(94,138,118,0.3); font-size: 0.5rem; white-space: nowrap; }
 .logs-empty { text-align: center; padding: 8px; font-size: 0.68rem; color: rgba(94,138,118,0.3); }
+
 /* 控制栏 */
 .controls { position: sticky; bottom: 0; z-index: 50; border-top: 1px solid var(--border); backdrop-filter: blur(20px); background: rgba(7,11,9,0.85); border-radius: var(--radius); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 0.5rem; }
 .ctrl-btn { padding: 9px 18px; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.3s; white-space: nowrap; }
@@ -236,4 +250,50 @@ const store = useChapter10Store()
 .s-tab { padding: 5px 10px; border-radius: 5px; font-size: 0.68rem; font-weight: 500; border: none; background: transparent; color: var(--muted); cursor: pointer; transition: all 0.3s; white-space: nowrap; font-family: var(--font-mono); }
 .s-tab:disabled { opacity: 0.35; cursor: not-allowed; }
 .s-tab.current { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(16,185,129,0.3); }
+
+/* 子组件内部更新按钮 */
+.child-btn {
+  margin-top: 10px;
+  width: 100%;
+  padding: 7px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+  color: #f59e0b;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.3s;
+}
+.child-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.child-btn:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.7);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
+}
+
+/* 补充 Fade 过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.3s ease;
+}
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.fade-move {
+  transition: transform 0.3s ease;
+}
 </style>

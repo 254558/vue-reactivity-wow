@@ -82,7 +82,7 @@ export const steps = [
     desc: 'Diff 算法的目标是最小化 DOM 操作。通过比较新旧 VNode 子节点数组，找到最少的移动、新增和删除操作，复用已有的真实 DOM。',
     detail: '旧: [A, B, C, D, E]\n新: [A, C, D, B, F]\n\n不使用 Diff: 卸载全部 5 个 + 新增 5 个 = 10 次\n使用 Diff: 移动 1 个 + 新增 1 个 + 卸载 1 个 = 3 次',
     color: '#10b981',
-    lines: [1, 2, 3, 4, 5, 6, 7],
+    lines: [0, 1, 2, 3, 4, 5, 6, 7],
     highlight: { head: false, tail: false, cross: false, find: false, result: false },
   },
   {
@@ -112,7 +112,7 @@ export const steps = [
     desc: '如果双端都不匹配，只能拿新头节点去旧节点数组中遍历查找。找到了就移动到头部，找不到就挂载新节点。',
     detail: '旧: [A, B, C, D]\n新: [E, A, B, C]\n\n双端都不匹配\n在旧数组中查找 E → 未找到\n→ mountElement(E) 新增节点\n\n性能瓶颈：O(n) 遍历查找',
     color: '#ef4444',
-    lines: [47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61],
+    lines: [45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61],
     highlight: { head: false, tail: false, cross: false, find: true, result: false },
   },
   {
@@ -122,7 +122,7 @@ export const steps = [
     desc: '双端循环结束后，如果旧节点数组先遍历完（新节点有剩余），则新增节点；如果新节点数组先遍历完（旧节点有剩余），则卸载多余节点。',
     detail: '新增: oldEndIdx < oldStartIdx\n卸载: newEndIdx < newStartIdx\n\n确保新旧 VNode 树完全同步',
     color: '#10b981',
-    lines: [64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75],
+    lines: [62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75],
     highlight: { head: false, tail: false, cross: false, find: false, result: true },
   },
   {
@@ -132,7 +132,7 @@ export const steps = [
     desc: 'Vue3 对非理想情况做了优化：通过求新旧节点索引映射的最长递增子序列(LIS)，只需移动不在子序列中的节点，极大减少了 DOM 移动次数。',
     detail: '新: [B, A, C, D]\n旧索引映射: [1, 0, 2, 3]\nLIS: [0, 2, 3] → 对应 A, C, D\n\n只有 B 不在 LIS 中\n→ 只需移动 B，其他保持不动！',
     color: '#8b5cf6',
-    lines: [47, 48],
+    lines: [45, 46, 47, 48],
     highlight: { head: false, tail: false, cross: false, find: true, result: true },
   },
 ]

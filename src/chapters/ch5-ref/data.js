@@ -85,7 +85,7 @@ export const steps = [
     desc: 'Proxy 只能代理对象（Object、Array、Map 等），无法代理原始值（Number、String、Boolean 等）。尝试 reactive(0) 会抛出 TypeError。',
     detail: 'new Proxy(0, handler)\n  → TypeError: Cannot create proxy\n    with a non-object as target\n\n原始值没有属性，无法被拦截',
     color: '#ef4444',
-    lines: [7, 8, 9, 10, 13, 14],
+    lines: [7, 8, 9, 10, 11, 12, 13, 14, 15],
     highlight: { problem: true, wrapper: false, define: false, unwrap: false },
   },
   {
@@ -95,7 +95,7 @@ export const steps = [
     desc: 'ref 的核心思路是将原始值包装为一个对象。该对象拥有 __v_isRef 标记和 value 属性，这样就能被 Proxy 或 Object.defineProperty 拦截。',
     detail: 'ref(0)\n  ↓\nwrapper = {\n  __v_isRef: true, // 标识\n  value: 0          // 存储原始值\n}\n\n对于对象也适用：ref({a:1}) 会自动调用 reactive',
     color: '#f59e0b',
-    lines: [18, 19, 20, 21, 22, 23],
+    lines: [18, 19, 20, 21, 22, 23, 24, 25, 26],
     highlight: { problem: false, wrapper: true, define: false, unwrap: false },
   },
   {
@@ -105,7 +105,7 @@ export const steps = [
     desc: '通过 Object.defineProperty 为 value 属性定义 get 和 set 访问器。读取 value 时 track 收集依赖，设置 value 时 trigger 触发更新。',
     detail: 'Object.defineProperty(wrapper, "value", {\n  get() {\n    track(wrapper, "value")\n    return val\n  },\n  set(newVal) {\n    val = newVal\n    trigger(wrapper, "value")\n  }\n})',
     color: '#10b981',
-    lines: [26, 27, 28, 29, 30, 31, 32, 33, 34, 35],
+    lines: [28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38],
     highlight: { problem: false, wrapper: true, define: true, unwrap: false },
   },
   {
@@ -115,7 +115,7 @@ export const steps = [
     desc: '因为响应式数据挂载在 wrapper.value 上，所以读取和修改时必须通过 .value。这是 ref 最显著的语法特征。',
     detail: 'const count = ref(0)\n\ncount.value  // 读取 (触发 get 拦截)\ncount.value++ // 修改 (触发 set 拦截)\n\ncount + 1     // ❌ 错误！丢失响应性',
     color: '#60a5fa',
-    lines: [63, 64, 65, 66],
+    lines: [63, 64, 65, 66, 67],
     highlight: { problem: false, wrapper: true, define: true, unwrap: false },
   },
   {
@@ -125,7 +125,7 @@ export const steps = [
     desc: '在模板或 reactive 对象中，每次写 .value 很繁琐。Vue 通过 proxyRefs 代理，在 get 时自动读取 ref.value，在 set 时自动赋值给 ref.value。',
     detail: 'const obj = proxyRefs({ count: ref(0) })\n\nobj.count     // 自动脱 ref，等同于 obj.count.value\nobj.count = 1 // 自动赋 .value，等同于 obj.count.value = 1',
     color: '#f59e0b',
-    lines: [43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57],
+    lines: [43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61],
     highlight: { problem: false, wrapper: false, define: false, unwrap: true },
   },
   {

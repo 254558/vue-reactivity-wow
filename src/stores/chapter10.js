@@ -6,6 +6,7 @@ export const useChapter10Store = defineStore('chapter10', () => {
   const totalSteps = steps.length
   // 演示状态
   const parentCount = ref(0)
+  const childCount = ref(0) // ✅ 新增：子组件内部状态
   const childPropTitle = ref('Initial Title')
   const isMounted = ref(false)
   const isUpdating = ref(false)
@@ -36,6 +37,17 @@ export const useChapter10Store = defineStore('chapter10', () => {
       isUpdating.value = false
     }, 600)
   }
+  // ✅ 新增：模拟子组件自身更新 (修改 setupState)
+  function simulateChildUpdate() {
+    if (!canInteract.value || isUpdating.value || !isMounted.value) return
+    isUpdating.value = true
+    childCount.value++
+    logAction('updateSelf', `子组件内部更新，setupState.count 变为 ${childCount.value}`)
+    setTimeout(() => {
+      logAction('Diff 子树', '重新执行 render，对比新旧 subTree，更新 DOM')
+      isUpdating.value = false
+    }, 600)
+  }
   function logAction(type, detail) {
     const now = new Date()
     const time = [now.getHours(), now.getMinutes(), now.getSeconds()]
@@ -46,6 +58,7 @@ export const useChapter10Store = defineStore('chapter10', () => {
   function reset() {
     currentStep.value = 1
     parentCount.value = 0
+    childCount.value = 0 // ✅ 新增：重置子组件状态
     childPropTitle.value = 'Initial Title'
     isMounted.value = false
     isUpdating.value = false
@@ -53,8 +66,8 @@ export const useChapter10Store = defineStore('chapter10', () => {
   }
   return {
     currentStep, totalSteps, steps,
-    parentCount, childPropTitle, isMounted, isUpdating, triggerLogs,
+    parentCount, childCount, childPropTitle, isMounted, isUpdating, triggerLogs, // ✅ 暴露 childCount
     currentStepData, activeLines, canInteract,
-    nextStep, prevStep, goToStep, simulateMount, simulateParentUpdate, reset
+    nextStep, prevStep, goToStep, simulateMount, simulateParentUpdate, simulateChildUpdate, reset // ✅ 暴露 simulateChildUpdate
   }
 })

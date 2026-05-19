@@ -2,8 +2,8 @@
   <div class="demo-layout">
     <div class="main-grid">
       <div class="left-col">
-        <StepDesc :step="store.currentStepData" />
         <CodePanel :sourceCode="sourceCode" :activeLines="store.activeLines" filename="mini-vue.js" />
+        <StepDesc :step="store.currentStepData" />
       </div>
       <div class="right-col">
         <div class="viz-card">

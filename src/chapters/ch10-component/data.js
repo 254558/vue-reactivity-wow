@@ -73,7 +73,7 @@ export const steps = [
     desc: 'Vue 组件本质上是一个包含 setup 函数的 JavaScript 对象。它接收 props，返回一个描述 UI 的渲染函数。组件是视图的抽象，而非真实的 DOM 元素。',
     detail: 'const MyComponent = {\n  props: { title: String },\n  setup(props) {\n    return () => h(\'div\', ...)\n  }\n}\n\n对象 = 组件定义\n渲染函数 = 组件输出的 UI',
     color: '#10b981',
-    lines: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+    lines: [0,1,2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
     highlight: { instance: false, setup: false, mount: false, update: false },
   },
   {
@@ -83,7 +83,7 @@ export const steps = [
     desc: '当组件被挂载时，渲染器会为其创建一个组件实例 instance。它是一个闭包作用域，存储了组件的 props、setup 返回的响应式状态、渲染函数和子树等核心数据。',
     detail: 'instance = {\n  props,       // 父级传参\n  setupState,  // 内部状态\n  render,      // 渲染函数\n  subTree,     // 渲染产物 VNode\n  isMounted    // 生命周期标记\n}\n\n每个组件实例独立互不干扰',
     color: '#f59e0b',
-    lines: [24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35],
+    lines: [21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34],
     highlight: { instance: true, setup: false, mount: false, update: false },
   },
   {
@@ -93,7 +93,7 @@ export const steps = [
     desc: '执行 setup 函数，初始化组件内部的响应式状态（如 ref, reactive），并将状态与渲染函数建立依赖关系，返回渲染函数供渲染器调用。',
     detail: 'setup(props) {\n  const count = ref(0) // 创建状态\n  \n  return () => {\n    return h(\'p\', null, count.value) // 闭包引用\n  }\n}\n\n闭包使得渲染函数能访问响应式状态',
     color: '#60a5fa',
-    lines: [41, 42, 43],
+    lines: [42,43],
     highlight: { instance: true, setup: true, mount: false, update: false },
   },
   {
@@ -103,7 +103,7 @@ export const steps = [
     desc: '执行渲染函数生成 subTree（组件输出的 VNode 树），然后递归调用 patch 将 subTree 渲染为真实 DOM。标记 isMounted = true。',
     detail: '1. const subTree = render()\n2. patch(null, subTree, container)\n3. isMounted = true\n\n组件 VNode 只是壳，subTree 才是真实的 DOM 结构',
     color: '#10b981',
-    lines: [46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56],
+    lines: [46, 47, 48, 49, 50, 51, 52],
     highlight: { instance: true, setup: false, mount: true, update: false },
   },
   {
@@ -113,7 +113,7 @@ export const steps = [
     desc: '当父组件状态变化导致子组件 props 改变时，渲染器会更新组件实例的 props，这通常会导致组件内部的副作用触发，重新执行渲染。',
     detail: '父组件 state 变化\n  → 重新执行父组件 render\n  → 生成包含新 props 的子组件 VNode\n  → patchComponent 检测到 props 变化\n  → updateProps(instance, newProps)',
     color: '#8b5cf6',
-    lines: [60, 61, 62, 63],
+    lines: [55,56,57,58],
     highlight: { instance: true, setup: false, mount: false, update: true },
   },
   {
@@ -123,7 +123,7 @@ export const steps = [
     desc: '重新执行渲染函数获取新的 subTree，通过对比新旧 subTree (Diff 算法)，最小化更新真实的 DOM 节点。至此，响应式与组件系统完美闭环。',
     detail: 'const prevTree = instance.subTree\nconst nextTree = render()\ninstance.subTree = nextTree\n\npatch(prevTree, nextTree)\n  → 只更新变化的部分 DOM\n\n数据驱动视图的完整链路闭环！',
     color: '#ef4444',
-    lines: [65, 66, 67, 68, 69],
+    lines: [60,61,62,63,64],
     highlight: { instance: true, setup: false, mount: false, update: true },
   },
 ]

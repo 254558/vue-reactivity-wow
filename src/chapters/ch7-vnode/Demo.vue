@@ -8,7 +8,7 @@
         <!-- ✅ 替换为公共说明组件 -->
         <StepDesc :step="store.currentStepData" />
       </div>
-      <!-- 右栏：可视化 (完全保持原样) -->
+      <!-- 右栏：可视化 -->
       <div class="right-col">
         <!-- 性能对比 (步骤1/2) -->
         <div class="viz-card">
@@ -26,13 +26,19 @@
             <div class="perf-item vnode">
               <div class="perf-label">VNode</div>
               <div class="perf-bar-bg">
-                <div class="perf-bar vnode-bar" :style="{ width: (4 / 268 * 100) + '%' }"></div>
+                <!-- 🚨 修复：宽度绑定动态的 vnodeProperties -->
+                <div class="perf-bar vnode-bar" :style="{ width: (store.vnodeProperties / 268 * 100) + '%' }"></div>
               </div>
-              <div class="perf-count">4 个属性</div>
+              <!-- 🚨 修复：展示动态的 vnodeProperties -->
+              <div class="perf-count">{{ store.vnodeProperties }} 个属性</div>
             </div>
           </div>
-          <div class="perf-ratio">
-            VNode 比 DOM 轻量 <strong>{{ store.domProperties > 0 ? Math.round(store.domProperties / 4) : '...' }}</strong> 倍
+          <!-- 🚨 修复：增加 v-if 保证两者都有值才计算并显示，除数改为动态值 -->
+          <div class="perf-ratio" v-if="store.domProperties > 0 && store.vnodeProperties > 0">
+            VNode 比 DOM 轻量 <strong>{{ Math.round(store.domProperties / store.vnodeProperties) }}</strong> 倍
+          </div>
+          <div class="perf-ratio" v-else>
+            VNode 比 DOM 轻量 <strong>...</strong> 倍
           </div>
         </div>
         <!-- VNode 树可视化 -->
@@ -133,21 +139,20 @@
   </div>
 </template>
 <script setup>
-import { watch } from 'vue' // ✅ 删除了不再需要的 computed, ref, nextTick
+import { watch } from 'vue' 
 import { useChapter7Store } from '@/stores/chapter7'
 import { sourceCode } from './data'
-// ✅ 引入公共组件
 import CodePanel from '@/components/CodePanel.vue'
 import StepDesc from '@/components/StepDesc.vue'
 const store = useChapter7Store()
-// ❌ 删除了原本的 kw, types 数组和 highlight 函数
-// ❌ 删除了原本的 highlightedLines 计算属性
-// ❌ 删除了原本的 codeRef 和 watch 滚动监听
-// ✅ 保留该章节特有的逻辑
 // 步骤1时自动触发DOM属性计数
 watch(() => store.currentStep, (val) => {
-  if (val === 1) store.simulateDOMCount()
-})
+  if (val === 1) {
+    store.simulateDOMCount()
+    // 🚨 核心修复：必须同时触发 VNode 的属性计数动画，改变 vnodeProperties
+    store.simulateVNodeCreate() 
+  }
+}, { immediate: true }) // 添加 immediate 确保首次加载也能触发
 function getLogClass(type) {
   if (['create','props','children','cache','append'].includes(type)) return 'mount'
   return 'done'
@@ -157,9 +162,6 @@ function getLogClass(type) {
 .demo-layout { display: flex; flex-direction: column; gap: 1rem; }
 .main-grid { display: grid; grid-template-columns: 1fr 380px; gap: 1.25rem; }
 .left-col, .right-col { display: flex; flex-direction: column; gap: 1rem; }
-/* ❌ 删除了所有关于 .code-panel, .code-header, .code-body, .code-line, .line-no 的样式 */
-/* ❌ 删除了所有关于 .step-desc, .desc-head, .desc-badge, .desc-text, .desc-detail 的样式 */
-/* ✅ 保留右侧可视化面板的样式 */
 .viz-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; transition: all 0.3s; }
 .viz-card.active { border-color: rgba(16,185,129,0.4); }
 .viz-head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }

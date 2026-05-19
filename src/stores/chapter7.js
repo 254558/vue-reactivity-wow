@@ -6,9 +6,9 @@ export const useChapter7Store = defineStore('chapter7', () => {
   const totalSteps = steps.length
   // 演示状态
   const domProperties = ref(0)
-  const vnodeProperties = ref(0)
+  const vnodeProperties = ref(0) // 🚨 确保定义了这个状态
   const isMounting = ref(false)
-  const mountPhase = ref('idle') // 'idle', 'create', 'props', 'children', 'cache', 'append'
+  const mountPhase = ref('idle') 
   const triggerLogs = ref([])
   const currentStepData = computed(() => steps[currentStep.value - 1])
   const activeLines = computed(() => currentStepData.value?.lines || [])
@@ -16,11 +16,14 @@ export const useChapter7Store = defineStore('chapter7', () => {
   function nextStep() {
     if (currentStep.value < totalSteps) {
       currentStep.value++
-      if (currentStep.value === 1) simulateDOMCount()
     }
   }
-  function prevStep() { if (currentStep.value > 1) currentStep.value-- }
-  function goToStep(n) { if (n >= 1 && n <= currentStep.value) currentStep.value = n }
+  function prevStep() { 
+    if (currentStep.value > 1) currentStep.value-- 
+  }
+  function goToStep(n) { 
+    if (n >= 1 && n <= currentStep.value) currentStep.value = n 
+  }
   // 模拟真实 DOM 属性计数
   function simulateDOMCount() {
     domProperties.value = 0
@@ -32,13 +35,15 @@ export const useChapter7Store = defineStore('chapter7', () => {
       }
     }, 50)
   }
-  // 模拟 VNode 创建
+  // 🚨 核心修复：必须添加这个方法，让 VNode 属性动起来
   function simulateVNodeCreate() {
     vnodeProperties.value = 0
     const target = 4
     const interval = setInterval(() => {
       vnodeProperties.value++
-      if (vnodeProperties.value >= target) clearInterval(interval)
+      if (vnodeProperties.value >= target) {
+        clearInterval(interval)
+      }
     }, 150)
   }
   // 模拟挂载流程
@@ -83,10 +88,12 @@ export const useChapter7Store = defineStore('chapter7', () => {
     mountPhase.value = 'idle'
     triggerLogs.value = []
   }
+  // 🚨 核心修复：确保 return 中包含了所有定义的方法和状态
   return {
     currentStep, totalSteps, steps,
     domProperties, vnodeProperties, isMounting, mountPhase, triggerLogs,
     currentStepData, activeLines, canInteract,
-    nextStep, prevStep, goToStep, simulateMount, reset
+    nextStep, prevStep, goToStep, 
+    simulateDOMCount, simulateVNodeCreate, simulateMount, reset
   }
 })

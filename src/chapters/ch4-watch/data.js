@@ -77,7 +77,7 @@ export const steps = [
     desc: 'watch 的本质是利用 effect 追踪一个数据源（getter），当数据源变化时，通过调度器执行用户传入的回调函数。',
     detail: 'watch(source, callback)\n  ↓\n将 source 转为 getter\n  ↓\n使用 effect(getter, { scheduler })\n  ↓\n数据变化 → scheduler → callback()',
     color: '#10b981',
-    lines: [27, 28, 29, 30, 31, 32, 33, 34, 35],
+    lines: [28, 29, 30, 31, 32, 33, 34, 35,],
     highlight: { source: true, traverse: false, job: false, callback: false },
   },
   {
@@ -87,7 +87,7 @@ export const steps = [
     desc: 'watch 接收两种数据源：如果是函数，直接作为 getter；如果是响应式对象，则包装为 traverse 递归读取函数，以建立深层依赖。',
     detail: 'watch(() => state.count, cb)  // 函数：精确侦听\nwatch(state, cb)               // 对象：深层侦听\n  ↓\n对象会被包装为 () => traverse(source)',
     color: '#f59e0b',
-    lines: [30, 31, 32, 33, 34],
+    lines: [30, 31, 32, 33, 34, 35],
     highlight: { source: true, traverse: false, job: false, callback: false },
   },
   {
@@ -97,7 +97,7 @@ export const steps = [
     desc: '当侦听整个对象时，traverse 会递归遍历对象的所有子属性。这会触发每个属性的 get 拦截器，从而建立完整的深层依赖关系。',
     detail: 'function traverse(value, seen) {\n  for (const k in value) {\n    traverse(value[k], seen) // 递归\n  }\n}\n\nstate.nested.num 变化也能被捕捉到',
     color: '#60a5fa',
-    lines: [19, 20, 21, 22, 23, 24, 25],
+    lines: [19, 20, 21, 22, 23, 24, 25, 26, 27],
     highlight: { source: true, traverse: true, job: false, callback: false },
   },
   {
@@ -107,7 +107,7 @@ export const steps = [
     desc: '当依赖数据变化时，调度器执行 job。job 重新运行 getter 获取新值，对比新旧值，如果不同则执行用户回调，并更新旧值。',
     detail: 'const job = () => {\n  newValue = runner() // 获取新值\n  if (newValue !== oldValue) {\n    cb(newValue, oldValue) // 触发回调\n    oldValue = newValue    // 更新旧值\n  }\n}',
     color: '#10b981',
-    lines: [38, 39, 40, 41, 42, 43, 44, 45],
+    lines: [36, 37, 38, 39, 40, 41, 42, 43, 44, 45],
     highlight: { source: true, traverse: false, job: true, callback: true },
   },
   {
@@ -117,7 +117,7 @@ export const steps = [
     desc: 'watch 创建的最后，同步执行一次 runner() 获取初始值，并将其作为 oldValue 保存。这确保了第一次数据变化时，回调能拿到正确的旧值。',
     detail: 'const runner = effect(getter, { scheduler: job })\n\n// 同步执行一次，建立依赖 & 获取初始值\noldValue = runner()  // oldValue = 0',
     color: '#f59e0b',
-    lines: [47, 48, 50],
+    lines: [49, 50],
     highlight: { source: true, traverse: false, job: false, callback: false },
   },
   {
@@ -127,7 +127,7 @@ export const steps = [
     desc: '修改 state.count，trigger 触发调度器 job。job 重新计算 newValue=1，与 oldValue=0 对比，不同则执行回调并更新 oldValue。',
     detail: 'state.count++ (0 -> 1)\n  → trigger 触发\n  → scheduler: job() 执行\n  → newValue = 1, oldValue = 0\n  → 1 !== 0，执行回调\n  → callback(1, 0)\n  → 更新 oldValue = 1',
     color: '#ef4444',
-    lines: [72],
+    lines: [68,69],
     highlight: { source: true, traverse: false, job: true, callback: true },
   },
 ]
