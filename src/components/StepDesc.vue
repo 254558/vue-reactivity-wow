@@ -96,6 +96,7 @@ const highlightedDetail = computed(() => {
   font-size: 0.72rem;
   line-height: 1.6;
   overflow-x: auto;
+  white-space: pre-line; 
 }
 
 /* 强行覆盖 Prism 样式，避免冲突 */
@@ -105,7 +106,6 @@ const highlightedDetail = computed(() => {
   margin: 0 !important;
   font-size: inherit !important;
   line-height: inherit !important;
-  white-space: pre !important;
 }
 
 /* 过渡动画 */
