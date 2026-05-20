@@ -125,7 +125,7 @@ export const steps = [
     desc: 'effect 执行完毕后，将自己 pop 出栈，并将 activeEffect 还原为新的栈顶元素（即外层的 effect）。保证外层后续代码依赖收集正确。',
     detail: 'fn() 执行完毕\n\neffectStack.pop() // 弹出内层\n\n还原 activeEffect:\nactiveEffect = effectStack[effectStack.length - 1]\n→ activeEffect 指向外层 effect',
     color: '#10b981',
-    lines: [21, 22,],
+    lines: [21, 22, 24, 25],
     highlight: { stack: true, push: false, pop: true, correct: false },
   },
   {

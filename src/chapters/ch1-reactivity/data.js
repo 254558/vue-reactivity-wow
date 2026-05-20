@@ -104,7 +104,7 @@ export const steps = [
     desc: 'state.count++ 触发 set 拦截器，调用 trigger()，从 bucket 中取出 effectFn 并执行，DOM 更新。',
     detail: 'state.count++ (0 → 1)\n  → set 拦截器触发\n  → trigger(state, "count")\n  → 从 bucket 取出 effectFn\n  → 执行 effectFn()\n  → DOM 更新为 "count: 1"',
     color: '#ef4444',
-    lines: [23, 24, 25, 26, 27, 28, 55, 56, 57, 58],
+    lines: [23, 24, 25, 26, 27, 28, 55, 56, 57],
     highlight: { state: true, bucket: true, effect: true },
   },
 ]

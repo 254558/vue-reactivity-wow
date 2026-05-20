@@ -73,6 +73,17 @@ function patchChildren(n1, n2, container) {
       unmount(oldChildren[i])
     }
   }
+}
+// ================= 优化：最长递增子序列 (LIS) =================
+// 求新节点在旧节点中的索引映射
+const newIndexToOldIndex = []
+// 通过 LIS 找出无需移动的节点
+const seq = getSequence(newIndexToOldIndex)
+// 只需移动不在 LIS 中的节点
+for (let i = newChildren.length - 1; i >= 0; i--) {
+  if (!seq.includes(i)) {
+    insert(newChildren[i].el, container, ...)
+  }
 }`
 export const steps = [
   {
@@ -102,7 +113,7 @@ export const steps = [
     desc: '如果两端不匹配，则交叉比较：旧头与新尾、旧尾与新头。如果匹配，说明节点发生了整体位移，需要调用 insertBefore 移动真实 DOM。',
     detail: '旧: [A, B, C, D]\n新: [D, A, B, C]\n\n旧头 A !== 新头 D\n旧尾 D === 新头 D → 匹配！\n→ 将 D 移动到最前面\n\n交叉匹配最大优势：快速定位大跨度移动',
     color: '#f59e0b',
-    lines: [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45],
+    lines: [33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43],
     highlight: { head: false, tail: false, cross: true, find: false, result: false },
   },
   {
@@ -122,7 +133,7 @@ export const steps = [
     desc: '双端循环结束后，如果旧节点数组先遍历完（新节点有剩余），则新增节点；如果新节点数组先遍历完（旧节点有剩余），则卸载多余节点。',
     detail: '新增: oldEndIdx < oldStartIdx\n卸载: newEndIdx < newStartIdx\n\n确保新旧 VNode 树完全同步',
     color: '#10b981',
-    lines: [62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75],
+    lines: [62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74],
     highlight: { head: false, tail: false, cross: false, find: false, result: true },
   },
   {
@@ -132,7 +143,7 @@ export const steps = [
     desc: 'Vue3 对非理想情况做了优化：通过求新旧节点索引映射的最长递增子序列(LIS)，只需移动不在子序列中的节点，极大减少了 DOM 移动次数。',
     detail: '新: [B, A, C, D]\n旧索引映射: [1, 0, 2, 3]\nLIS: [0, 2, 3] → 对应 A, C, D\n\n只有 B 不在 LIS 中\n→ 只需移动 B，其他保持不动！',
     color: '#8b5cf6',
-    lines: [45, 46, 47, 48],
+    lines: [75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85],
     highlight: { head: false, tail: false, cross: false, find: true, result: true },
   },
 ]

@@ -116,7 +116,7 @@ export const steps = [
     desc: '当 state.count 变化时，调度器 scheduler 执行，将 dirty 重新设为 true。下次读取 obj.value 时，才会重新计算并更新缓存。',
     detail: 'state.count = 3\n  → trigger 触发\n  → 执行 scheduler()\n  → dirty = true (变脏)\n\n读取 obj.value\n  → dirty 为 true，重新计算\n  → value = 6, dirty = false',
     color: '#ef4444',
-    lines: [54, 55, 56, 57, 58, 59],
+    lines: [54, 55, 56, 57, 58],
     highlight: { lazy: true, cache: true, dirty: true },
   },
 ]

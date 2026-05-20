@@ -95,7 +95,7 @@ export const steps = [
     desc: '遍历 vnode.props 设置 DOM 属性，递归处理 vnode.children。如果是数组则递归 mountElement，如果是字符串则设置 textContent。',
     detail: 'for (key in props) {\n  el.setAttribute(key, props[key])\n}\n\nchildren.forEach(child => {\n  mountElement(child, el) // 递归\n})\n\n文本节点: el.textContent = children',
     color: '#10b981',
-    lines: [26,27,28,29,30,31,32,33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44],
+    lines: [26,27,28,29,30,31,32,33, 34, 35, 36, 37, 38, 39],
     highlight: { problem: false, h: false, mount: true, result: false },
   },
   {
@@ -105,7 +105,7 @@ export const steps = [
     desc: '将创建的真实 DOM 引用缓存在 vnode.el 上（后续更新需要），最后将 DOM 挂载到容器中，页面完成渲染。',
     detail: 'vnode.el = el       // 缓存引用\ncontainer.appendChild(el) // 挂载\n\n关键：缓存 el 使得后续 patch 时\n可以直接通过 vnode.el 访问旧 DOM',
     color: '#f59e0b',
-    lines: [45,46, 47, 48, 49],
+    lines: [40, 41, 42, 43],
     highlight: { problem: false, h: false, mount: true, result: true },
   },
 ]

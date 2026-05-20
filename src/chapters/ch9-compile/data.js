@@ -131,7 +131,7 @@ export const steps = [
     desc: '编译的最终目的：将声明式的 HTML 模板，转换为命令式的 JavaScript 渲染函数。它可以在运行时高效地创建 VNode 树。',
     detail: '模板: <div>hello {{ name }}</div>\n  ↓ 编译\nfunction render() {\n  return h(\'div\', null, [\n    \'hello \',\n    _ctx.name\n  ])\n}\n\n声明式 → 命令式，模板 → VNode',
     color: '#10b981',
-    lines: [65,66,67,68,69,70,71, 72, 73, 74, 75, 76, 77],
+    lines: [65, 66, 67, 68, 69, 70, 71, 72, 73],
     highlight: { parse: false, ast: false, transform: false, codegen: true, result: true },
   },
 ]
