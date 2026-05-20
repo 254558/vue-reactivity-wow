@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>手写Vue3组件系统（完整版 Debugger）</title>
+  <title>Vue 组件系统（Debugger版）</title>
 
   <style>
     *{
@@ -15,7 +15,7 @@
     body{
       background:#070b09;
       color:#d0e4da;
-      font-family:'Noto Sans SC',system-ui;
+      font-family: system-ui, sans-serif;
       min-height:100vh;
       display:flex;
       justify-content:center;
@@ -251,21 +251,17 @@
       transition:.25s;
     }
 
-    button:hover{
-      transform:translateY(-2px);
-    }
-
     button:disabled{
       opacity:.3;
       cursor:not-allowed;
       transform:none!important;
     }
 
-    .b1{background:linear-gradient(135deg,#6b7280,#9ca3af);}
-    .b2{background:linear-gradient(135deg,#059669,#10b981);}
-    .b3{background:linear-gradient(135deg,#7c3aed,#8b5cf6);}
-    .b4{background:linear-gradient(135deg,#b45309,#f59e0b);}
-    .b5{background:linear-gradient(135deg,#dc2626,#ef4444);}
+    .b1{background:#6b7280;}
+    .b2{background:#10b981;}
+    .b3{background:#7c3aed;}
+    .b4{background:#f59e0b;}
+    .b5{background:#ef4444;}
 
     /* ===== 日志 ===== */
 
@@ -308,7 +304,7 @@
 <div class="box">
 
   <h1>
-    Vue 组件系统 Debugger（完整版）
+    Vue 组件系统 Debugger
     <small>
       打开 F12 → Sources → 勾选 Pause on debugger → 按顺序点击按钮学习组件挂载 / 更新 / patch
     </small>

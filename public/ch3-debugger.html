@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vue3 computed（教学优化Debugger版）</title>
+<title>Vue 计算属性（Debugger版）</title>
 
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
-    font-family: system-ui;
+    font-family: system-ui, sans-serif;
     background:#070b09;
     color:#d0e4da;
     display:flex;
@@ -58,7 +58,7 @@
 <body>
 
 <div class="box">
-  <h3>Vue computed Debugger（优化版）</h3>
+  <h1>Vue 计算属性 Debugger</h1>
 
   <div class="display">
     <div class="val count">state.count: <span id="count">0</span></div>
@@ -204,21 +204,23 @@ function init() {
   document.getElementById('r3').disabled = false
 }
 
-function render() {
+function render(computedValue) {
   document.getElementById('count').innerText = state.count
-  document.getElementById('computed').innerText = c.value ?? '-'
+  if (computedValue !== undefined) {
+    document.getElementById('computed').innerText = computedValue
+  }
 }
 
 function read1() {
   debugger
   const v = c.value
-  render()
+  render(v)
 }
 
 function read2() {
   debugger
   const v = c.value
-  render()
+  render(v)
 }
 
 function inc() {
@@ -230,7 +232,7 @@ function inc() {
 function read3() {
   debugger
   const v = c.value
-  render()
+  render(v)
 }
 
 </script>

@@ -1,3 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vue 嵌套 Effect（Debugger版）</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: system-ui, sans-serif;
+  background:#070b09;
+  color:#d0e4da;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  padding:40px 20px;
+}
+.box {
+  width:560px;
+  background:#0d1612;
+  border:1px solid #1a2e25;
+  border-radius:12px;
+  padding:40px;
+  text-align:center;
+}
+.display {
+  background:#0a100d;
+  border:1px solid #1a2e25;
+  padding:16px;
+  border-radius:8px;
+  margin:20px 0;
+  font-family:monospace;
+}
+.val { margin:6px 0; }
+.text { color:#10b981; font-size:20px; }
+.active { color:#60a5fa; }
+.stack-vis {
+  background:#070b09;
+  border:1px solid #1a2e25;
+  border-radius:6px;
+  padding:10px;
+  margin:10px 0;
+  text-align:left;
+  font-size:0.72rem;
+  line-height:1.6;
+}
+.stack-item { padding:4px 8px; border-radius:4px; border-left:3px solid transparent; }
+.stack-item.active { border-left-color:#10b981; background:rgba(16,185,129,0.06); color:#10b981; }
+.stack-item.inactive { color:#5e8a76; opacity:0.5; }
+
+button {
+  margin:6px;
+  padding:10px 14px;
+  border:none;
+  border-radius:8px;
+  font-weight:700;
+  color:white;
+  cursor:pointer;
+}
+.init { background:#6b7280; }
+.effect { background:#10b981; }
+.problem { background:#ef4444; }
+.solution { background:#7c3aed; }
+.change { background:#2563eb; }
+button:disabled { opacity:0.4; }
+
+.log {
+  margin-top:16px;
+  background:#070b09;
+  border:1px solid #1a2e25;
+  border-radius:6px;
+  padding:10px;
+  font-size:0.75rem;
+  font-family:monospace;
+  text-align:left;
+  line-height:1.7;
+}
+</style>
+</head>
+<body>
+
+<div class="box">
+  <h1>Vue 嵌套 Effect Debugger</h1>
+
+  <div class="display">
+    <div class="val text">state.text: <span id="textVal">"Hello"</span></div>
+    <div class="val active">activeEffect: <span id="activeEffectVal">null</span></div>
+    <div class="stack-vis" id="stackVis">
+      <div class="stack-item inactive">（空）</div>
+    </div>
+  </div>
+
+  <button class="init" onclick="setup()" id="setupBtn">1. 初始化</button>
+  <button class="effect" onclick="createEffects()" id="effectBtn" disabled>2. 创建嵌套 effect</button>
+  <button class="problem" onclick="showProblem()" id="problemBtn" disabled>3. 覆盖问题演示</button>
+  <button class="solution" onclick="showSolution()" id="solutionBtn" disabled>4. EffectStack 解决</button>
+  <button class="change" onclick="changeText()" id="changeBtn" disabled>5. 修改数据</button>
+
+  <div class="log" id="logArea">
+    点击「初始化」开始
+  </div>
+</div>
+
 <script>
 /* ===== 响应式系统（无栈版本 - 有问题）===== */
 let activeEffect = null
@@ -89,8 +193,15 @@ let effect1, effect2
 function updateStackDisplay() {
   const el = document.getElementById('stackVis')
 
-  if (effectStack.length === 0) {
+  if (effectStack.length === 0 && !effect1) {
     el.innerHTML = '<div class="stack-item inactive">（空）</div>'
+  } else if (effectStack.length === 0 && effect1) {
+    // 栈为空但 effect 已注册
+    el.innerHTML = `
+      <div class="stack-item inactive">[注册] effect1 ${effect1._name ? '✓' : ''}</div>
+      <div class="stack-item inactive">[注册] effect2 ${effect2?._name ? '✓' : ''}</div>
+      <div class="stack-item inactive" style="margin-top:6px;color:#5e8a76">（栈为空 — 无正在执行的 effect）</div>
+    `
   } else {
     el.innerHTML = effectStack.map((fn, i) => {
       const isActive = i === effectStack.length - 1
@@ -148,6 +259,9 @@ function createEffects() {
 
   effect1._name = 'effect1'
 
+  // 刷新栈显示（effect 执行完后 _name 才赋值）
+  updateStackDisplay()
+
   document.getElementById('problemBtn').disabled = false
   log('嵌套 effect 已创建（effectStack版本）')
 }
@@ -155,7 +269,7 @@ function createEffects() {
 /* ===== 覆盖问题演示 ===== */
 function showProblem() {
 
-  debugger // 进入“无栈版本问题演示”
+  debugger // 进入"无栈版本问题演示"
 
   document.getElementById('problemBtn').disabled = true
   log('--- 无栈版本：activeEffect 覆盖问题 ---')
@@ -258,7 +372,7 @@ function changeText() {
 
   state.text = 'World'
 
-  debugger // effect 执行链开始
+  debugger // setter 触发 trigger，effects 队列开始执行
 
   updateDisplay()
 
@@ -274,6 +388,9 @@ function updateDisplay() {
 function log(msg) {
   const area = document.getElementById('logArea')
   const t = new Date().toLocaleTimeString()
-  area.innerHTML = `[${t}] ${msg}\n` + area.innerHTML + '<br>'
+  area.innerHTML = `[${t}] ${msg}<br>` + area.innerHTML
 }
 </script>
+
+</body>
+</html>

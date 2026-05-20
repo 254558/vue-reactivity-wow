@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vue3 Diff Debugger</title>
+  <title>Vue Diff（Debugger版）</title>
 
   <style>
     * {
@@ -13,7 +13,7 @@
     }
 
     body {
-      font-family: 'Noto Sans SC', system-ui, sans-serif;
+      font-family: system-ui, sans-serif;
       background: #070b09;
       color: #d0e4da;
       min-height: 100vh;
@@ -28,7 +28,7 @@
       max-width: 700px;
       background: #0d1612;
       border: 1px solid #1a2e25;
-      border-radius: 14px;
+      border-radius: 12px;
       padding: 40px;
     }
 
@@ -49,7 +49,7 @@
       margin-top: 24px;
       background: #0a100d;
       border: 1px solid #1a2e25;
-      border-radius: 10px;
+      border-radius: 8px;
       padding: 20px;
     }
 
@@ -185,10 +185,6 @@
       transition: 0.2s;
     }
 
-    button:hover {
-      transform: translateY(-1px);
-    }
-
     button:disabled {
       opacity: 0.3;
       cursor: not-allowed;
@@ -231,7 +227,7 @@
 <div class="box">
 
   <h1>
-    Vue3 Diff Debugger（教学完整版）
+    Vue Diff Debugger
     <small>F12 → 按顺序点击按钮 → 观察双端 Diff 全流程</small>
   </h1>
 

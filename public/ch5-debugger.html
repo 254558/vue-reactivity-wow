@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vue Ref（教学优化Debugger版）</title>
+<title>Vue Ref（Debugger版）</title>
 
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
-    font-family: system-ui;
+    font-family: system-ui, sans-serif;
     background:#070b09;
     color:#d0e4da;
     display:flex;
@@ -57,7 +57,7 @@
 <body>
 
 <div class="box">
-  <h3>Vue Ref Debugger（优化版）</h3>
+  <h1>Vue Ref Debugger</h1>
 
   <div class="val count">value: <span id="val">未创建</span></div>
 
@@ -78,7 +78,6 @@
 <script>
 
 /* ================= reactive核心 ================= */
-
 let activeEffect = null
 const bucket = new Map()
 
@@ -99,7 +98,6 @@ function effect(fn) {
 
 function track(t, k) {
   if (!activeEffect) return
-
   document.getElementById('track').innerText = `track(${k})`
 
   let map = bucket.get(t)
@@ -107,96 +105,67 @@ function track(t, k) {
 
   let set = map.get(k)
   if (!set) { set = new Set(); map.set(k, set) }
-
   set.add(activeEffect)
 }
 
 function trigger(t, k) {
-
   document.getElementById('trigger').innerText = `trigger(${k})`
-
   const map = bucket.get(t)
   if (!map) return
-
   const set = map.get(k)
   if (!set) return
-
   set.forEach(fn => {
-
     debugger // ② trigger触发
-
     fn()
   })
 }
 
 /* ================= ref实现 ================= */
-
 function ref(val) {
-
   debugger // ③ 创建ref
-
   const wrapper = { value: val }
+  Object.defineProperty(wrapper, '__v_isRef', { value: true })
 
   let proxy = new Proxy(wrapper, {
     get(t, k) {
-
       debugger // ④ get value
-
       getCount++
       document.getElementById('get').innerText = getCount
-
       track(proxy, k)
       return t[k]
     },
-
     set(t, k, v) {
-
       debugger // ⑤ set value
-
       setCount++
       document.getElementById('set').innerText = setCount
-
       t[k] = v
       trigger(proxy, k)
       return true
     }
   })
-
   return proxy
 }
 
 /* ================= proxyRefs ================= */
-
 function proxyRefs(obj) {
-
   debugger // ⑥ 创建proxyRefs
-
   return new Proxy(obj, {
     get(t, k) {
-
       const v = t[k]
-
       debugger // ⑦ get proxyRefs
-
       if (v && v.__v_isRef) {
         document.getElementById('unwrap').innerText = 'auto-unwrapped'
         return v.value
       }
-
       return v
     },
-
     set(t, k, v) {
-
       const old = t[k]
-
       debugger // ⑧ set proxyRefs
-
       if (old && old.__v_isRef) {
         old.value = v
         return true
       }
-
       t[k] = v
       return true
     }
@@ -204,16 +173,27 @@ function proxyRefs(obj) {
 }
 
 /* ================= demo ================= */
-
 let r = null
+// 视图更新副作用函数
+function renderView() {
+  document.getElementById('val').innerText = r.value
+}
 
 function init() {
   document.getElementById('b1').disabled = false
+  // 清空状态
+  document.getElementById('track').innerText = '-'
+  document.getElementById('trigger').innerText = '-'
+  document.getElementById('unwrap').innerText = '-'
+  getCount = setCount = 0
+  document.getElementById('get').innerText = 0
+  document.getElementById('set').innerText = 0
 }
 
 function createRef() {
   r = ref(0)
-  document.getElementById('val').innerText = r.value
+  // 挂载副作用，激活activeEffect，track才能生效
+  effect(renderView)
 
   document.getElementById('b2').disabled = false
   document.getElementById('b3').disabled = false
@@ -222,27 +202,18 @@ function createRef() {
 
 function readRef() {
   const v = r.value
-  document.getElementById('val').innerText = v
 }
 
 function writeRef() {
   r.value++
-  document.getElementById('val').innerText = r.value
 }
 
 function demo() {
-
-  const obj = {
-    count: ref(10)
-  }
-
+  const obj = { count: ref(10) }
   const p = proxyRefs(obj)
-
   const v = p.count
-
   document.getElementById('val').innerText = v
 }
-
 </script>
 
 </body>
