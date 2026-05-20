@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { steps } from '@/chapters/ch8-diff/data'
+import { useChapterBase } from './useChapterBase'
+
 export const useChapter8Store = defineStore('chapter8', () => {
-  const currentStep = ref(1)
-  const totalSteps = steps.length
+  const base = useChapterBase(steps)
+
   // 演示用的 VNode 列表
   const oldChildren = ref(['A', 'B', 'C', 'D'])
   const newChildren = ref(['D', 'A', 'C', 'E', 'B'])
@@ -15,14 +17,7 @@ export const useChapter8Store = defineStore('chapter8', () => {
   // 操作记录
   const operations = ref([])
   const isAutoPlaying = ref(false)
-  const currentStepData = computed(() => steps[currentStep.value - 1])
-  const activeLines = computed(() => currentStepData.value?.lines || [])
-  const canInteract = computed(() => currentStep.value >= totalSteps)
-  function nextStep() {
-    if (currentStep.value < totalSteps) currentStep.value++
-  }
-  function prevStep() { if (currentStep.value > 1) currentStep.value-- }
-  function goToStep(n) { if (n >= 1 && n <= currentStep.value) currentStep.value = n }
+
   // 获取当前匹配类型
   function getMatchType(oldKey, newKey) {
     if (oldChildren.value[oldStartIdx.value] === newChildren.value[newStartIdx.value]) return 'head-head'
@@ -31,9 +26,10 @@ export const useChapter8Store = defineStore('chapter8', () => {
     if (oldChildren.value[oldEndIdx.value] === newChildren.value[newStartIdx.value]) return 'tail-head'
     return 'find'
   }
+
   // 模拟执行一步 Diff
   function simulateStep() {
-    if (!canInteract.value || isAutoPlaying.value) return
+    if (!base.canInteract.value || isAutoPlaying.value) return
     isAutoPlaying.value = true
     const type = getMatchType()
     const osi = oldStartIdx.value
@@ -68,8 +64,9 @@ export const useChapter8Store = defineStore('chapter8', () => {
     }
     setTimeout(() => { isAutoPlaying.value = false }, 500)
   }
+
   function reset() {
-    currentStep.value = 1
+    base.resetBase()
     oldChildren.value = ['A', 'B', 'C', 'D']
     newChildren.value = ['D', 'A', 'C', 'E', 'B']
     oldStartIdx.value = 0
@@ -79,12 +76,12 @@ export const useChapter8Store = defineStore('chapter8', () => {
     operations.value = []
     isAutoPlaying.value = false
   }
+
   return {
-    currentStep, totalSteps, steps,
+    ...base,
     oldChildren, newChildren,
     oldStartIdx, oldEndIdx, newStartIdx, newEndIdx,
     operations, isAutoPlaying,
-    currentStepData, activeLines, canInteract,
-    nextStep, prevStep, goToStep, simulateStep, reset
+    simulateStep, reset
   }
 })

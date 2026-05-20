@@ -82,16 +82,6 @@ watch(
 </script>
 
 <style scoped>
-:root {
-  --card: #0d1117;
-  --border: #30363d;
-  --radius: 8px;
-  --font-mono: 'JetBrains Mono', Menlo, Monaco, Consolas, monospace;
-  --muted: #8b949e;
-  --accent: #10b981;
-  --accent-dim: rgba(16, 185, 129, 0.1);
-}
-
 .code-panel {
   background: var(--card);
   border: 1px solid var(--border);

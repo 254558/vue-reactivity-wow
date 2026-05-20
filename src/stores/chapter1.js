@@ -1,27 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { steps } from '@/chapters/ch1-reactivity/data'
+import { useChapterBase } from './useChapterBase'
+
 export const useChapter1Store = defineStore('chapter1', () => {
-  const currentStep = ref(1)
-  const totalSteps = steps.length
+  const base = useChapterBase(steps)
+
   const reactiveCount = ref(0)
-  const triggerLogs = ref([])
-  const currentStepData = computed(() => steps[currentStep.value - 1])
-  const activeLines = computed(() => currentStepData.value?.lines || [])
-  const canIncrement = computed(() => currentStep.value >= totalSteps)
-  const hasTracked = computed(() => currentStep.value >= 4)
-  const hasLogs = computed(() => triggerLogs.value.length > 0)
-  function nextStep() {
-    if (currentStep.value < totalSteps) {
-      currentStep.value++
-    }
-  }
-  function prevStep() { 
-    if (currentStep.value > 1) currentStep.value-- 
-  }
-  function goToStep(n) { 
-    if (n >= 1 && n <= currentStep.value) currentStep.value = n 
-  }
+  const hasTracked = computed(() => base.currentStep.value >= 4)
+  const hasLogs = computed(() => base.triggerLogs.value.length > 0)
+  const canIncrement = base.canInteract
+
   function increment() {
     if (!canIncrement.value) return
     const from = reactiveCount.value
@@ -29,17 +18,18 @@ export const useChapter1Store = defineStore('chapter1', () => {
     const now = new Date()
     const time = [now.getHours(), now.getMinutes(), now.getSeconds()]
       .map(v => String(v).padStart(2, '0')).join(':')
-    triggerLogs.value.unshift({ from, to: reactiveCount.value, time })
-    if (triggerLogs.value.length > 20) triggerLogs.value.pop()
+    base.triggerLogs.value.unshift({ from, to: reactiveCount.value, time })
+    if (base.triggerLogs.value.length > 20) base.triggerLogs.value.pop()
   }
+
   function reset() {
-    currentStep.value = 1
+    base.resetBase()
     reactiveCount.value = 0
-    triggerLogs.value = []
   }
+
   return {
-    currentStep, totalSteps, reactiveCount, hasTracked, triggerLogs, hasLogs,
-    currentStepData, activeLines, canIncrement,
-    nextStep, prevStep, goToStep, increment, reset, steps
+    ...base,
+    reactiveCount, hasTracked, hasLogs, canIncrement,
+    increment, reset
   }
 })
