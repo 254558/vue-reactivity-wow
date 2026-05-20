@@ -93,7 +93,7 @@
       border: 1px solid #1a2e25;
       border-radius: 6px;
       padding: 12px;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: monospace;
       font-size: 0.72rem;
       text-align: left;
       line-height: 1.6;
@@ -127,7 +127,7 @@
     .btn-parse { background: #2563eb; }
     .btn-transform { background: #7c3aed; }
     .btn-codegen { background: #dc2626; }
-    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .tip-box {
       background: #0a100d;
       border: 1px solid #1a2e25;
@@ -144,11 +144,11 @@
       border: 1px solid #1a2e25;
       border-radius: 3px;
       padding: 1px 6px;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: monospace;
       font-size: 0.7rem;
       color: #10b981;
     }
-    code { color: #60a5fa; font-family: 'JetBrains Mono', monospace; }
+    code { color: #60a5fa; font-family: monospace; }
     .divider { border: none; border-top: 1px solid #1a2e25; margin: 16px 0; }
     .status-box {
       background: #070b09;
@@ -523,7 +523,7 @@ function log(msg) {
   const area = document.getElementById('logArea')
   const t = new Date().toLocaleTimeString()
 
-  area.innerHTML = `[${t}] ${msg}\n` + area.innerHTML
+  area.innerHTML = `[${t}] ${msg}<br>` + area.innerHTML
 }
 </script>
 </body>

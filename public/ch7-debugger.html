@@ -99,6 +99,8 @@
       color:white;
     }
 
+    button:disabled { opacity:0.4; cursor:not-allowed; }
+
     .btn-setup { background:#6b7280; }
     .btn-vnode { background:#10b981; }
     .btn-mount { background:#7c3aed; }
@@ -146,9 +148,9 @@
   </div>
 
   <div class="btn-group">
-    <button class="btn-setup" onclick="setup()">1 初始化</button>
-    <button class="btn-vnode" onclick="createVNode()" id="vnodeBtn" disabled>2 创建VNode</button>
-    <button class="btn-mount" onclick="mountVNode()" id="mountBtn" disabled>3 mount</button>
+    <button class="btn-setup" onclick="setup()">1. 初始化</button>
+    <button class="btn-vnode" onclick="createVNode()" id="vnodeBtn" disabled>2. 创建 VNode</button>
+    <button class="btn-mount" onclick="mountVNode()" id="mountBtn" disabled>3. 挂载</button>
   </div>
 
   <div class="status-box" id="log"></div>

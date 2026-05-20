@@ -46,6 +46,18 @@
   .nestedBtn { background:#2563eb; }
 
   button:disabled { opacity:0.4; }
+
+  .log {
+    margin-top:16px;
+    background:#070b09;
+    border:1px solid #1a2e25;
+    border-radius:6px;
+    padding:10px;
+    font-size:0.75rem;
+    font-family:monospace;
+    text-align:left;
+    line-height:1.7;
+  }
 </style>
 </head>
 
@@ -64,6 +76,8 @@
   <button class="watch" onclick="createWatch()" id="w" disabled>创建watch</button>
   <button class="change" onclick="incCount()" id="c1" disabled>改count</button>
   <button class="nestedBtn" onclick="incNested()" id="c2" disabled>改nested</button>
+
+  <div class="log" id="logArea">点击「初始化」开始</div>
 </div>
 
 <script>
@@ -119,11 +133,21 @@ function trigger(t, k) {
   })
 }
 
+const reactiveMap = new WeakMap()
+
 function reactive(obj) {
-  return new Proxy(obj, {
+  // 已经是 Proxy 的不再包裹
+  if (reactiveMap.has(obj)) return reactiveMap.get(obj)
+
+  const proxy = new Proxy(obj, {
     get(t, k) {
       track(t, k)
-      return t[k]
+      const val = t[k]
+      // 深响应式：如果值是对象，递归包裹 Proxy
+      if (typeof val === 'object' && val !== null) {
+        return reactive(val)
+      }
+      return val
     },
     set(t, k, v) {
       t[k] = v
@@ -131,6 +155,9 @@ function reactive(obj) {
       return true
     }
   })
+
+  reactiveMap.set(obj, proxy)
+  return proxy
 }
 
 /* ================= traverse ================= */
@@ -220,14 +247,12 @@ function init() {
 
 function createWatch() {
 
-  watch(() => {
-    debugger // ⑩ watch source getter
-    return { c: state.count, n: state.nested.num }
-  }, (nv, ov) => {
+  // 使用 state 对象作为 source → 触发 traverse 深度遍历
+  watch(state, (nv, ov) => {
 
-    debugger // ⑪ callback执行
+    debugger // ⑪ callback执行（traverse 已收集所有嵌套依赖）
 
-    log(JSON.stringify(ov) + " → " + JSON.stringify(nv))
+    log(`count: ${state.count}, nested.num: ${state.nested.num}`)
   })
 
   document.getElementById('c1').disabled = false
@@ -245,7 +270,10 @@ function incNested() {
 }
 
 function log(msg) {
-  console.log(msg)
+  const area = document.getElementById('logArea')
+  const t = new Date().toLocaleTimeString()
+  const prev = area.innerHTML
+  area.innerHTML = `[${t}] ${msg}<br>` + prev
 }
 
 </script>

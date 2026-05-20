@@ -368,11 +368,9 @@ function showSolution() {
 /* ===== 修改数据 ===== */
 function changeText() {
 
-  debugger // trigger 触发入口
+  debugger // trigger 执行入口（setter 会同步触发所有 effect）
 
   state.text = 'World'
-
-  debugger // setter 触发 trigger，effects 队列开始执行
 
   updateDisplay()
 
