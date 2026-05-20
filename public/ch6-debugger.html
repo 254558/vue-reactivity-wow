@@ -1,198 +1,3 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>手写Vue3嵌套Effect（Debugger版）</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
-      background: #070b09;
-      color: #d0e4da;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 40px 20px;
-    }
-    .box {
-      background: #0d1612;
-      border: 1px solid #1a2e25;
-      border-radius: 12px;
-      padding: 40px 48px;
-      text-align: center;
-      max-width: 560px;
-      width: 100%;
-    }
-    .box h1 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-      color: #d0e4da;
-    }
-    .box h1 small {
-      display: block;
-      font-size: 0.72rem;
-      font-weight: 400;
-      color: #5e8a76;
-      margin-top: 6px;
-    }
-    .display-area {
-      margin: 24px 0;
-      padding: 20px;
-      background: #0a100d;
-      border: 1px solid #1a2e25;
-      border-radius: 8px;
-    }
-    .display-row {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 16px;
-      margin: 6px 0;
-    }
-    .display-label { font-size: 0.78rem; color: #5e8a76; }
-    .display-val {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-    }
-    .display-val.text { color: #10b981; font-size: 1.5rem; }
-    .display-val.active { color: #60a5fa; font-size: 0.85rem; }
-    .display-val.stack { color: #f59e0b; font-size: 0.85rem; }
-    .stack-vis {
-      background: #070b09;
-      border: 1px solid #1a2e25;
-      border-radius: 6px;
-      padding: 10px;
-      margin: 10px 0;
-      font-family: monospace;
-      font-size: 0.72rem;
-      text-align: left;
-      line-height: 1.6;
-    }
-    .stack-item {
-      padding: 4px 8px;
-      border-radius: 4px;
-      margin: 2px 0;
-      border-left: 3px solid transparent;
-      transition: all 0.3s;
-    }
-    .stack-item.active {
-      border-left-color: #10b981;
-      background: rgba(16, 185, 129, 0.06);
-      color: #10b981;
-    }
-    .stack-item.inactive { color: #5e8a76; opacity: 0.5; }
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin: 20px 0;
-      flex-wrap: wrap;
-    }
-    .btn {
-      padding: 10px 18px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s;
-      color: white;
-    }
-    .btn-setup { background: linear-gradient(135deg, #6b7280, #9ca3af); }
-    .btn-setup:hover { box-shadow: 0 4px 20px rgba(156, 163, 175, 0.35); transform: translateY(-1px); }
-    .btn-effect { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 2px 12px rgba(16, 185, 129, 0.2); }
-    .btn-effect:hover { box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35); transform: translateY(-1px); }
-    .btn-problem { background: linear-gradient(135deg, #b91c1c, #ef4444); box-shadow: 0 2px 12px rgba(239, 68, 68, 0.2); }
-    .btn-problem:hover { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35); transform: translateY(-1px); }
-    .btn-solution { background: linear-gradient(135deg, #7c3aed, #a78bfa); box-shadow: 0 2px 12px rgba(167, 139, 250, 0.2); }
-    .btn-solution:hover { box-shadow: 0 4px 20px rgba(167, 139, 250, 0.35); transform: translateY(-1px); }
-    .btn-change { background: linear-gradient(135deg, #2563eb, #60a5fa); box-shadow: 0 2px 12px rgba(96, 165, 250, 0.2); }
-    .btn-change:hover { box-shadow: 0 4px 20px rgba(96, 165, 250, 0.35); transform: translateY(-1px); }
-    .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
-    .tip-box {
-      background: #0a100d;
-      border: 1px solid #1a2e25;
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin-top: 20px;
-      text-align: left;
-      line-height: 1.9;
-    }
-    .tip-box p { font-size: 0.78rem; color: #5e8a76; }
-    .tip-box strong { color: #d0e4da; }
-    kbd {
-      background: rgba(94, 138, 118, 0.15);
-      border: 1px solid #1a2e25;
-      border-radius: 3px;
-      padding: 1px 6px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      color: #10b981;
-    }
-    code { color: #60a5fa; font-family: 'JetBrains Mono', monospace; }
-    .divider {
-      border: none;
-      border-top: 1px solid #1a2e25;
-      margin: 16px 0;
-    }
-    .status-box {
-      background: #070b09;
-      border: 1px solid #1a2e25;
-      border-radius: 6px;
-      padding: 10px 14px;
-      margin-top: 10px;
-      font-size: 0.75rem;
-      font-family: monospace;
-      line-height: 1.7;
-      text-align: left;
-    }
-    .badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 0.6rem; font-weight: 700; }
-    .badge-red { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-    .badge-green { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-  </style>
-</head>
-<body>
-  <div class="box">
-    <h1>
-      Vue 嵌套 Effect Debugger
-      <small>先打开 F12 → 按顺序点击按钮逐步学习</small>
-    </h1>
-
-    <div class="display-area">
-      <div class="display-row">
-        <span class="display-label">state.text</span>
-        <span class="display-val text" id="textVal">"Hello"</span>
-      </div>
-      <div class="display-row">
-        <span class="display-label">activeEffect</span>
-        <span class="display-val active" id="activeEffectVal">null</span>
-      </div>
-      <hr class="divider">
-      <div class="display-label" style="margin-bottom:6px">Effect 栈</div>
-      <div class="stack-vis" id="stackVis">
-        <div class="stack-item inactive">（空）</div>
-      </div>
-    </div>
-
-    <div class="btn-group">
-      <button class="btn btn-setup" id="setupBtn" onclick="setup()">1. 初始化</button>
-      <button class="btn btn-effect" id="effectBtn" onclick="createEffects()" disabled>2. 创建嵌套 effect</button>
-      <button class="btn btn-problem" id="problemBtn" onclick="showProblem()" disabled>3. 覆盖问题演示</button>
-      <button class="btn btn-solution" id="solutionBtn" onclick="showSolution()" disabled>4. EffectStack 解决</button>
-      <button class="btn btn-change" id="changeBtn" onclick="changeText()" disabled>5. 修改数据</button>
-    </div>
-
-    <hr class="divider">
-    <div class="status-box" id="logArea">
-      点击「初始化」开始
-    </div>
-  </div>
-
 <script>
 /* ===== 响应式系统（无栈版本 - 有问题）===== */
 let activeEffect = null
@@ -212,64 +17,96 @@ function effectWithoutStack(fn) {
 /* ===== 改进版 effect（带栈 - 正确版本）===== */
 function effectWithStack(fn) {
   const effectFn = () => {
-    debugger // push 到 effectStack
+
+    // ===== 进入 effect =====
+    debugger // push 前：即将进入栈
+
     effectStack.push(effectFn)
     activeEffect = effectFn
     updateStackDisplay()
+
+    debugger // 状态已切换：effectStack + activeEffect 已更新
+
     fn()
-    debugger // pop 出栈
+
+    // ===== effect 执行结束 =====
+    debugger // 即将出栈（关键回退点）
+
     effectStack.pop()
     activeEffect = effectStack[effectStack.length - 1] || null
     updateStackDisplay()
+
+    debugger // 出栈完成：activeEffect 已恢复
   }
+
   effectFn()
   return effectFn
 }
 
 function track(target, key) {
   if (!activeEffect) return
+
   let depsMap = bucket.get(target)
-  if (!depsMap) { depsMap = new Map(); bucket.set(target, depsMap) }
+  if (!depsMap) {
+    depsMap = new Map()
+    bucket.set(target, depsMap)
+  }
+
   let deps = depsMap.get(key)
-  if (!deps) { deps = new Set(); depsMap.set(key, deps) }
+  if (!deps) {
+    deps = new Set()
+    depsMap.set(key, deps)
+  }
+
   deps.add(activeEffect)
 }
 
 function trigger(target, key) {
   const depsMap = bucket.get(target)
   if (!depsMap) return
+
   const effects = depsMap.get(key)
   effects && effects.forEach(fn => fn())
 }
 
 function reactive(data) {
   return new Proxy(data, {
-    get(target, key) { track(target, key); return target[key] },
-    set(target, key, val) { target[key] = val; trigger(target, key); return true }
+    get(target, key) {
+      track(target, key)
+      return target[key]
+    },
+    set(target, key, val) {
+      target[key] = val
+      trigger(target, key)
+      return true
+    }
   })
 }
 
 let effect1, effect2
-let problemMode = false
 
-/* ===== 界面更新 ===== */
+/* ===== UI 更新 ===== */
 function updateStackDisplay() {
   const el = document.getElementById('stackVis')
+
   if (effectStack.length === 0) {
     el.innerHTML = '<div class="stack-item inactive">（空）</div>'
   } else {
     el.innerHTML = effectStack.map((fn, i) => {
       const isActive = i === effectStack.length - 1
       const name = fn._name || `effect${i + 1}`
+
       return `<div class="stack-item ${isActive ? 'active' : 'inactive'}">
         [${i}] ${name} ${isActive ? '← activeEffect' : ''}
       </div>`
     }).join('')
   }
-  document.getElementById('activeEffectVal').innerText = activeEffect ? (activeEffect._name || 'effect') : 'null'
+
+  document.getElementById('activeEffectVal').innerText =
+    activeEffect ? (activeEffect._name || 'effect') : 'null'
 }
 
-/* ===== 按钮操作 ===== */
+/* ===== 初始化 ===== */
 function setup() {
   document.getElementById('setupBtn').disabled = true
   state = reactive({ text: 'Hello' })
@@ -278,41 +115,59 @@ function setup() {
   log('初始化完成')
 }
 
+/* ===== 创建嵌套 effect ===== */
 function createEffects() {
-  debugger // 创建嵌套 effect
+
+  debugger // 开始创建嵌套 effect（关键入口）
+
   document.getElementById('effectBtn').disabled = true
 
   effect1 = effectWithStack(() => {
-    debugger // effect1（外层）开始执行
+
+    debugger // effect1 执行开始（外层）
+
     document.getElementById('textVal').innerText = `"${state.text}"`
     updateDisplay()
 
     effect2 = effectWithStack(() => {
-      debugger // effect2（内层）开始执行 — 看 activeEffect 被谁覆盖？
+
+      debugger // effect2 执行开始（内层嵌套）
+
       document.getElementById('textVal').innerText = `"${state.text}"`
       updateDisplay()
-      debugger // effect2 结束
+
+      debugger // effect2 执行结束
+
     })
+
     effect2._name = 'effect2'
-    debugger // effect1 继续执行
+
+    debugger // effect1 继续执行（此时 effect2 已注册）
+
   })
+
   effect1._name = 'effect1'
 
   document.getElementById('problemBtn').disabled = false
-  log('嵌套 effect 已创建（带栈）')
+  log('嵌套 effect 已创建（effectStack版本）')
 }
 
+/* ===== 覆盖问题演示 ===== */
 function showProblem() {
-  debugger // 演示覆盖问题：用旧版 effect（无栈）
-  document.getElementById('problemBtn').disabled = true
 
-  log('--- 覆盖问题演示 ---')
+  debugger // 进入“无栈版本问题演示”
+
+  document.getElementById('problemBtn').disabled = true
+  log('--- 无栈版本：activeEffect 覆盖问题 ---')
 
   const oldBucket = new Map()
   let oldActive = null
 
   const oldEffect = (fn) => {
-    const ef = () => { oldActive = ef; fn() }
+    const ef = () => {
+      oldActive = ef
+      fn()
+    }
     ef._name = fn._name || 'anonymous'
     ef()
     return ef
@@ -320,58 +175,97 @@ function showProblem() {
 
   const oldTrack = (target, key) => {
     if (!oldActive) return
+
     let depsMap = oldBucket.get(target)
-    if (!depsMap) { depsMap = new Map(); oldBucket.set(target, depsMap) }
+    if (!depsMap) {
+      depsMap = new Map()
+      oldBucket.set(target, depsMap)
+    }
+
     let deps = depsMap.get(key)
-    if (!deps) { deps = new Set(); depsMap.set(key, deps) }
+    if (!deps) {
+      deps = new Set()
+      depsMap.set(key, deps)
+    }
+
     deps.add(oldActive)
   }
 
-  const oldReactive = (data) => new Proxy(data, {
-    get(t, k) { oldTrack(t, k); return t[k] },
-    set(t, k, v) { t[k] = v; const depsMap = oldBucket.get(t); if (depsMap) { const deps = depsMap.get(k); deps && deps.forEach(fn => fn()) }; return true }
-  })
+  const oldReactive = (data) =>
+    new Proxy(data, {
+      get(t, k) {
+        oldTrack(t, k)
+        return t[k]
+      },
+      set(t, k, v) {
+        t[k] = v
+
+        const depsMap = oldBucket.get(t)
+        if (depsMap) {
+          const deps = depsMap.get(k)
+          deps && deps.forEach(fn => fn())
+        }
+
+        return true
+      }
+    })
 
   const oldState = oldReactive({ text: 'Hello' })
 
-  debugger // 创建 effect1（外层）
-  let capturedEffect1
+  debugger // effect1 开始执行（无栈）
+
   oldEffect(() => {
-    debugger // effect1 中：active = effect1
-    capturedEffect1 = oldActive
+
+    debugger // effect1 active
+
     const _ = oldState.text
-    debugger // track 收集到 effect1
 
     oldEffect(() => {
-      debugger // effect2 中：active = effect2（覆盖了！）
-      const _ = oldState.text
-      debugger // track 本应收集 effect2，但 activeEffect 问题已暴露
+
+      debugger // effect2 覆盖 oldActive
+
+      const _2 = oldState.text
+
     })
-    debugger // 回到 effect1：但是 active 已被清空！
-    const _2 = oldState.text
-    debugger // 这里 track 收集到的是 effect2（从内层带上来的）！
+
+    debugger // 回到 effect1，但 oldActive 已被污染
+
+    const _3 = oldState.text
+
   })
 
-  debugger // 主动画 effect1 的外层范围丢失了！
-  log('问题：无栈时外层 effect 的依赖被内层污染')
+  debugger // 问题结束点
+
+  log('问题：无栈导致 activeEffect 被覆盖')
   document.getElementById('solutionBtn').disabled = false
 }
 
+/* ===== 解决方案 ===== */
 function showSolution() {
-  debugger // 用 effectStack 解决
+
+  debugger // 切换到 effectStack 正确模型
+
   document.getElementById('solutionBtn').disabled = true
   document.getElementById('changeBtn').disabled = false
-  log('effectStack 解决了覆盖问题 - 现在可以修改数据了')
+
+  log('使用 effectStack：解决嵌套覆盖问题')
 }
 
+/* ===== 修改数据 ===== */
 function changeText() {
-  debugger // 修改数据，观察只有正确的 effect 被触发
+
+  debugger // trigger 触发入口
+
   state.text = 'World'
-  debugger
+
+  debugger // effect 执行链开始
+
   updateDisplay()
+
   log(`state.text → "World"`)
 }
 
+/* ===== UI ===== */
 function updateDisplay() {
   if (!state) return
   document.getElementById('textVal').innerText = `"${state.text}"`
@@ -383,5 +277,3 @@ function log(msg) {
   area.innerHTML = `[${t}] ${msg}\n` + area.innerHTML + '<br>'
 }
 </script>
-</body>
-</html>

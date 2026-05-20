@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>手写Vue3响应式（Debugger版）</title>
+  <title>手写Vue3响应式（Debugger教学优化版）</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+      font-family: system-ui, sans-serif;
       background: #070b09;
       color: #d0e4da;
       display: flex;
@@ -26,165 +26,153 @@
       max-width: 520px;
       width: 100%;
     }
-    .box h1 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-      color: #d0e4da;
-    }
-    .box h1 small {
-      display: block;
-      font-size: 0.72rem;
-      font-weight: 400;
-      color: #5e8a76;
-      margin-top: 6px;
-    }
     .num-display {
       font-size: 3.5rem;
       font-weight: 900;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: monospace;
       color: #10b981;
       margin: 20px 0;
     }
-    .btn-group {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      margin: 24px 0;
-      flex-wrap: wrap;
-    }
+    .btn-group { display: flex; gap: 12px; justify-content: center; margin: 24px 0; flex-wrap: wrap; }
     .btn {
       padding: 12px 24px;
-      font-size: 0.9rem;
-      font-weight: 700;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s;
+      font-weight: 700;
       color: white;
     }
-    .btn-setup { background: linear-gradient(135deg, #6b7280, #9ca3af); }
-    .btn-setup:hover { box-shadow: 0 4px 20px rgba(156, 163, 175, 0.35); transform: translateY(-1px); }
-    .btn-add { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 2px 12px rgba(16, 185, 129, 0.2); }
-    .btn-add:hover { box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35); transform: translateY(-1px); }
-    .btn-reduce { background: linear-gradient(135deg, #b91c1c, #ef4444); box-shadow: 0 2px 12px rgba(239, 68, 68, 0.2); }
-    .btn-reduce:hover { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35); transform: translateY(-1px); }
-    .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
+    .btn-setup { background: #6b7280; }
+    .btn-add { background: #10b981; }
+    .btn-reduce { background: #ef4444; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .tip-box {
       background: #0a100d;
       border: 1px solid #1a2e25;
       border-radius: 8px;
-      padding: 16px 20px;
+      padding: 16px;
       margin-top: 20px;
       text-align: left;
-      line-height: 1.9;
+      font-size: 12px;
+      line-height: 1.8;
+      color: #5e8a76;
     }
-    .tip-box p { font-size: 0.78rem; color: #5e8a76; }
-    .tip-box strong { color: #d0e4da; }
-    kbd {
-      background: rgba(94, 138, 118, 0.15);
-      border: 1px solid #1a2e25;
-      border-radius: 3px;
-      padding: 1px 6px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      color: #10b981;
-    }
-    code { color: #10b981; font-family: 'JetBrains Mono', monospace; }
   </style>
 </head>
+
 <body>
-  <div class="box">
-    <h1>
-      Vue 响应式 Debugger
-      <small>先打开 F12 → 点"初始化"开始调试</small>
-    </h1>
-    <div class="num-display" id="num">0</div>
-    <div class="btn-group">
-      <button class="btn btn-setup" id="setupBtn" onclick="setup()">1. 初始化系统</button>
-      <button class="btn btn-add" id="addBtn" onclick="add()" disabled>2. +1</button>
-      <button class="btn btn-reduce" id="reduceBtn" onclick="reduce()" disabled>-1</button>
-    </div>
-    <div class="tip-box">
-      <strong>使用方式：</strong>
-      <p>1. 按 <kbd>F12</kbd> 打开 DevTools → Sources 面板</p>
-      <p>2. 点击 <strong>「初始化系统」</strong> → 从创建响应式数据开始逐步调试</p>
-      <p>3. 初始化完成后，<kbd>+1</kbd> / <kbd>-1</kbd> 解锁</p>
-      <p>4. 每个 <code>debugger</code> 旁都有注释说明当前发生了什么</p>
-    </div>
+<div class="box">
+  <h1>Vue 响应式 Debugger（教学优化版）</h1>
+  <div class="num-display" id="num">0</div>
+
+  <div class="btn-group">
+    <button class="btn btn-setup" id="setupBtn" onclick="setup()">初始化</button>
+    <button class="btn btn-add" id="addBtn" onclick="add()" disabled>+1</button>
+    <button class="btn btn-reduce" id="reduceBtn" onclick="reduce()" disabled>-1</button>
   </div>
 
+  <div class="tip-box">
+    <div>执行顺序核心链路：</div>
+    <div>effect → get → track → set → trigger → effect</div>
+  </div>
+</div>
+
 <script>
-/* ===== 响应式系统核心 ===== */
+/* ================= 响应式核心 ================= */
+
 let activeEffect = null
 const bucket = new Map()
 let state = null
 
 function effect(fn) {
-  debugger // ① activeEffect 当前是什么？
+  // ① 进入 effect：准备收集依赖
+  debugger
+
   activeEffect = fn
-  debugger // ② activeEffect 已赋值，调用 fn()
+
+  // ② 执行 fn → 会触发 get → 进入 track
   fn()
-  debugger // ③ fn 执行完，看看 bucket 里有什么
+
+  // ③ fn 执行完，依赖已收集完成
   activeEffect = null
-  debugger // ④ 清空 activeEffect
+
+  debugger
 }
 
+/* 依赖收集：发生在 get 之后 */
 function track(target, key) {
-  debugger // ⑤ 进入 track：谁在读数据？target/key 是什么？
+  // ④ 只有在 effect 执行时才会收集依赖
+  debugger
+
   if (!activeEffect) return
+
   let depsMap = bucket.get(target)
-  debugger // ⑥ 第一次？depsMap 是 undefined
-  if (!depsMap) { depsMap = new Map(); bucket.set(target, depsMap) }
-  debugger // ⑦ bucket 结构：对象 → Map { key → Set { effectFn } }
+  if (!depsMap) {
+    depsMap = new Map()
+    bucket.set(target, depsMap)
+  }
+
   let deps = depsMap.get(key)
-  debugger // ⑧ deps 不存在
-  if (!deps) { deps = new Set(); depsMap.set(key, deps) }
-  debugger // ⑨ deps 已创建
+  if (!deps) {
+    deps = new Set()
+    depsMap.set(key, deps)
+  }
+
+  // ⑤ 建立：target → key → effect
   deps.add(activeEffect)
-  debugger // ⑩ ✓ effect 已收集到 Set 中
+
+  debugger
 }
 
+/* 触发更新：发生在 set 之后 */
 function trigger(target, key) {
-  debugger // ⑪ 进入 trigger：谁改了数据？
+  // ⑥ 数据发生变化，开始通知依赖
+  debugger
+
   const depsMap = bucket.get(target)
-  debugger // ⑫ 取出依赖表
   if (!depsMap) return
+
   const deps = depsMap.get(key)
-  debugger // ⑬ 取出 effect 集合
-  deps && deps.forEach(fn => {
-    debugger // ⑭ 重新执行 effect
+  if (!deps) return
+
+  deps.forEach(fn => {
+    // ⑦ 重新执行 effect → 会再次触发 get → 重新 track
+    debugger
     fn()
   })
 }
 
+/* Proxy 响应式 */
 function reactive(data) {
-  debugger // 创建 Proxy
   return new Proxy(data, {
     get(target, key) {
-      debugger // get 拦截：谁在读数据？
+      // ⑧ 读取数据 → 触发依赖收集
+      debugger
+
       track(target, key)
-      debugger // track 结束
+
       return target[key]
     },
+
     set(target, key, val) {
-      debugger // set 拦截：谁在改数据？
+      // ⑨ 修改数据 → 触发更新流程
+      debugger
+
       target[key] = val
-      debugger // 值已修改
+
       trigger(target, key)
-      debugger // trigger 已执行，页面更新
+
       return true
     }
   })
 }
 
-/* ===== 初始化（点按钮执行）===== */
+/* ================= 初始化 ================= */
+
 function setup() {
   document.getElementById('setupBtn').disabled = true
 
   state = reactive({ count: 0 })
-  // ↑ 进入 reactive + Proxy 拦截
 
   effect(() => {
     document.getElementById('num').innerText = state.count
@@ -194,17 +182,16 @@ function setup() {
   document.getElementById('reduceBtn').disabled = false
 }
 
-/* ===== 按钮操作 ===== */
+/* ================= 操作 ================= */
+
 function add() {
-  debugger // 点击了 +1
+  debugger
   state.count++
-  debugger // count 已修改，页面已更新
 }
 
 function reduce() {
-  debugger // 点击了 -1
+  debugger
   state.count--
-  debugger // count 已修改，页面已更新
 }
 </script>
 </body>

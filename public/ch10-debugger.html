@@ -1,359 +1,959 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>手写Vue3组件系统（Debugger版）</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>手写Vue3组件系统（完整版 Debugger）</title>
+
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
-      background: #070b09;
-      color: #d0e4da;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 40px 20px;
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
     }
-    .box {
-      background: #0d1612;
-      border: 1px solid #1a2e25;
-      border-radius: 12px;
-      padding: 40px 48px;
-      text-align: center;
-      max-width: 560px;
-      width: 100%;
+
+    body{
+      background:#070b09;
+      color:#d0e4da;
+      font-family:'Noto Sans SC',system-ui;
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:40px 20px;
     }
-    .box h1 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-      color: #d0e4da;
+
+    .box{
+      width:100%;
+      max-width:980px;
+      background:#0d1612;
+      border:1px solid #1a2e25;
+      border-radius:18px;
+      padding:34px;
     }
-    .box h1 small {
-      display: block;
-      font-size: 0.72rem;
-      font-weight: 400;
-      color: #5e8a76;
-      margin-top: 6px;
+
+    h1{
+      font-size:1.2rem;
+      margin-bottom:8px;
     }
-    .display-area {
-      margin: 24px 0;
-      padding: 20px;
-      background: #0a100d;
-      border: 1px solid #1a2e25;
-      border-radius: 8px;
+
+    h1 small{
+      display:block;
+      margin-top:8px;
+      color:#5e8a76;
+      font-size:.75rem;
+      font-weight:400;
     }
-    .comp-tree {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0;
-      font-family: 'JetBrains Mono', monospace;
+
+    .layout{
+      display:grid;
+      grid-template-columns:1fr 340px;
+      gap:20px;
+      margin-top:24px;
     }
-    .comp-node {
-      border: 2px solid #1a2e25;
-      border-radius: 8px;
-      padding: 12px 16px;
-      width: 100%;
-      transition: all 0.35s;
+
+    .panel{
+      background:#0a100d;
+      border:1px solid #1a2e25;
+      border-radius:14px;
+      padding:18px;
     }
-    .comp-node.parent { border-color: rgba(245, 158, 11, 0.5); background: rgba(7,11,9,0.6); }
-    .comp-node.parent.updating { border-color: #f59e0b; box-shadow: 0 0 16px rgba(245,158,11,0.15); }
-    .comp-node.child { border-color: rgba(96, 165, 250, 0.3); background: rgba(7,11,9,0.6); }
-    .comp-node.child.mounted { border-color: rgba(16,185,129,0.4); }
-    .comp-node.child.updating { border-color: #8b5cf6; box-shadow: 0 0 16px rgba(139,92,246,0.15); }
-    .comp-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 4px;
+
+    .panel-title{
+      color:#5e8a76;
+      font-size:.75rem;
+      margin-bottom:14px;
+      font-weight:700;
+      letter-spacing:.5px;
     }
-    .comp-icon {
-      width: 22px; height: 22px; border-radius: 5px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.65rem;
+
+    /* ===== 组件树 ===== */
+
+    .tree{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:0;
     }
-    .comp-icon.parent-icon { background: rgba(245,158,11,0.15); color: #f59e0b; }
-    .comp-icon.child-icon { background: rgba(96,165,250,0.15); color: #60a5fa; }
-    .comp-name { font-size: 0.75rem; font-weight: 700; }
-    .comp-state { font-size: 0.68rem; display: flex; align-items: center; gap: 4px; padding-left: 30px; color: #5e8a76; }
-    .comp-state .val { color: #f59e0b; font-weight: 700; }
-    .comp-state .accent { color: #10b981; }
-    .tree-conn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 4px 0;
+
+    .comp{
+      width:100%;
+      border-radius:12px;
+      border:2px solid #1a2e25;
+      background:rgba(7,11,9,.55);
+      padding:14px;
+      transition:.3s;
     }
-    .tree-conn .line { width: 2px; height: 14px; background: #1a2e25; }
-    .tree-conn .props {
-      font-size: 0.6rem;
-      color: #5e8a76;
-      background: rgba(7,11,9,0.6);
-      padding: 2px 8px;
-      border-radius: 4px;
-      transition: all 0.3s;
+
+    .parent{
+      border-color:rgba(245,158,11,.35);
     }
-    .tree-conn .props.flowing { color: #8b5cf6; background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.3); }
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin: 20px 0;
-      flex-wrap: wrap;
+
+    .child{
+      border-color:rgba(96,165,250,.35);
+      width:82%;
     }
-    .btn {
-      padding: 10px 18px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s;
-      color: white;
+
+    .comp.active{
+      transform:scale(1.02);
+      box-shadow:0 0 25px rgba(16,185,129,.12);
     }
-    .btn-setup { background: linear-gradient(135deg, #6b7280, #9ca3af); }
-    .btn-setup:hover { box-shadow: 0 4px 20px rgba(156, 163, 175, 0.35); transform: translateY(-1px); }
-    .btn-mount { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 2px 12px rgba(16, 185, 129, 0.2); }
-    .btn-mount:hover { box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35); transform: translateY(-1px); }
-    .btn-update { background: linear-gradient(135deg, #7c3aed, #8b5cf6); box-shadow: 0 2px 12px rgba(139, 92, 246, 0.2); }
-    .btn-update:hover { box-shadow: 0 4px 20px rgba(139, 92, 246, 0.35); transform: translateY(-1px); }
-    .btn-child { background: linear-gradient(135deg, #b45309, #f59e0b); box-shadow: 0 2px 12px rgba(245, 158, 11, 0.2); }
-    .btn-child:hover { box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35); transform: translateY(-1px); }
-    .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
-    .tip-box {
-      background: #0a100d;
-      border: 1px solid #1a2e25;
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin-top: 20px;
-      text-align: left;
-      line-height: 1.9;
+
+    .comp.rendering{
+      border-color:#10b981;
     }
-    .tip-box p { font-size: 0.78rem; color: #5e8a76; }
-    .tip-box strong { color: #d0e4da; }
-    kbd {
-      background: rgba(94, 138, 118, 0.15);
-      border: 1px solid #1a2e25;
-      border-radius: 3px;
-      padding: 1px 6px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      color: #10b981;
+
+    .comp.patching{
+      border-color:#8b5cf6;
+      box-shadow:0 0 22px rgba(139,92,246,.18);
     }
-    code { color: #60a5fa; font-family: 'JetBrains Mono', monospace; }
-    .divider { border: none; border-top: 1px solid #1a2e25; margin: 16px 0; }
-    .status-box {
-      background: #070b09;
-      border: 1px solid #1a2e25;
-      border-radius: 6px;
-      padding: 10px 14px;
-      margin-top: 10px;
-      font-size: 0.75rem;
-      font-family: monospace;
-      line-height: 1.7;
-      text-align: left;
+
+    .comp.skipped{
+      opacity:.55;
     }
+
+    .head{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:8px;
+    }
+
+    .icon{
+      width:24px;
+      height:24px;
+      border-radius:7px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:.7rem;
+      font-weight:700;
+    }
+
+    .parent .icon{
+      background:rgba(245,158,11,.12);
+      color:#f59e0b;
+    }
+
+    .child .icon{
+      background:rgba(96,165,250,.12);
+      color:#60a5fa;
+    }
+
+    .name{
+      font-size:.8rem;
+      font-weight:700;
+    }
+
+    .state{
+      padding-left:34px;
+      font-size:.72rem;
+      line-height:1.9;
+      color:#5e8a76;
+    }
+
+    .val{
+      color:#10b981;
+      font-weight:700;
+    }
+
+    .orange{
+      color:#f59e0b;
+    }
+
+    .line-wrap{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      margin:6px 0;
+    }
+
+    .line{
+      width:2px;
+      height:16px;
+      background:#1a2e25;
+    }
+
+    .props{
+      font-size:.62rem;
+      color:#5e8a76;
+      background:rgba(7,11,9,.7);
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid #1a2e25;
+      transition:.3s;
+    }
+
+    .props.flow{
+      color:#8b5cf6;
+      border-color:rgba(139,92,246,.4);
+      background:rgba(139,92,246,.08);
+    }
+
+    /* ===== 流程 ===== */
+
+    .flow{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    .step{
+      padding:8px 10px;
+      border-radius:8px;
+      border:1px solid #1a2e25;
+      background:rgba(7,11,9,.7);
+      color:#5e8a76;
+      font-size:.66rem;
+      transition:.3s;
+    }
+
+    .step.active{
+      border-color:#10b981;
+      color:#10b981;
+      background:rgba(16,185,129,.08);
+    }
+
+    .step.done{
+      opacity:.45;
+    }
+
+    /* ===== DOM ===== */
+
+    #domRoot{
+      margin-top:18px;
+      border:1px dashed #1a2e25;
+      border-radius:10px;
+      padding:14px;
+      min-height:90px;
+      background:#070b09;
+      font-family:monospace;
+      font-size:.75rem;
+      line-height:1.8;
+    }
+
+    /* ===== 按钮 ===== */
+
+    .btns{
+      margin-top:20px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+
+    button{
+      border:none;
+      border-radius:10px;
+      padding:10px 18px;
+      cursor:pointer;
+      font-weight:700;
+      color:white;
+      transition:.25s;
+    }
+
+    button:hover{
+      transform:translateY(-2px);
+    }
+
+    button:disabled{
+      opacity:.3;
+      cursor:not-allowed;
+      transform:none!important;
+    }
+
+    .b1{background:linear-gradient(135deg,#6b7280,#9ca3af);}
+    .b2{background:linear-gradient(135deg,#059669,#10b981);}
+    .b3{background:linear-gradient(135deg,#7c3aed,#8b5cf6);}
+    .b4{background:linear-gradient(135deg,#b45309,#f59e0b);}
+    .b5{background:linear-gradient(135deg,#dc2626,#ef4444);}
+
+    /* ===== 日志 ===== */
+
+    .log{
+      margin-top:18px;
+      background:#070b09;
+      border:1px solid #1a2e25;
+      border-radius:10px;
+      padding:12px;
+      font-family:monospace;
+      font-size:.72rem;
+      line-height:1.8;
+      max-height:240px;
+      overflow:auto;
+    }
+
+    .code{
+      margin-top:14px;
+      background:#070b09;
+      border:1px solid #1a2e25;
+      border-radius:10px;
+      padding:12px;
+      font-family:monospace;
+      font-size:.72rem;
+      white-space:pre-wrap;
+      line-height:1.7;
+      color:#60a5fa;
+    }
+
+    .green{ color:#10b981; }
+    .purple{ color:#8b5cf6; }
+    .yellow{ color:#f59e0b; }
+    .red{ color:#ef4444; }
+
   </style>
 </head>
+
 <body>
-  <div class="box">
-    <h1>
-      Vue 组件系统 Debugger
-      <small>先打开 F12 → 按顺序点击按钮逐步学习</small>
-    </h1>
 
-    <div class="display-area">
-      <div class="comp-tree" id="compTree">
-        <div class="comp-node parent" id="parentComp">
-          <div class="comp-header">
-            <div class="comp-icon parent-icon">P</div>
-            <span class="comp-name">ParentComponent</span>
+<div class="box">
+
+  <h1>
+    Vue 组件系统 Debugger（完整版）
+    <small>
+      打开 F12 → Sources → 勾选 Pause on debugger → 按顺序点击按钮学习组件挂载 / 更新 / patch
+    </small>
+  </h1>
+
+  <div class="layout">
+
+    <!-- 左边 -->
+    <div class="panel">
+
+      <div class="panel-title">组件树</div>
+
+      <div class="tree">
+
+        <!-- Parent -->
+        <div class="comp parent" id="parentComp">
+          <div class="head">
+            <div class="icon">P</div>
+            <div class="name">ParentComponent</div>
           </div>
-          <div class="comp-state">
-            <span>state.count</span>
-            <span class="val" id="parentCount">0</span>
+
+          <div class="state">
+            state.count :
+            <span class="val orange" id="parentCount">0</span>
+          </div>
+
+          <div class="state">
+            render() :
+            <span class="val" id="parentRender">未执行</span>
           </div>
         </div>
-        <div class="tree-conn">
+
+        <!-- line -->
+        <div class="line-wrap">
           <div class="line"></div>
-          <div class="props" id="propsDisplay">props: { title: "---" }</div>
+          <div class="props" id="propsFlow">
+            props: { title: "---" }
+          </div>
           <div class="line"></div>
         </div>
-        <div class="comp-node child" id="childComp">
-          <div class="comp-header">
-            <div class="comp-icon child-icon">C</div>
-            <span class="comp-name">ChildComponent</span>
+
+        <!-- Child -->
+        <div class="comp child" id="childComp">
+          <div class="head">
+            <div class="icon">C</div>
+            <div class="name">ChildComponent</div>
           </div>
-          <div class="comp-state">
-            <span>props.title</span>
-            <span class="accent val" id="childTitle">---</span>
+
+          <div class="state">
+            props.title :
+            <span class="val" id="childTitle">---</span>
           </div>
-          <div class="comp-state" style="margin-top:2px">
-            <span>setupState.count</span>
-            <span class="accent" id="childCount" style="color:#10b981;font-weight:700">0</span>
+
+          <div class="state">
+            setupState.count :
+            <span class="val green" id="childCount">0</span>
+          </div>
+
+          <div class="state">
+            render() :
+            <span class="val" id="childRender">未执行</span>
           </div>
         </div>
+
       </div>
+
+      <div id="domRoot">
+        DOM 尚未挂载
+      </div>
+
     </div>
 
-    <div class="btn-group">
-      <button class="btn btn-setup" id="setupBtn" onclick="setup()">1. 初始化</button>
-      <button class="btn btn-mount" id="mountBtn" onclick="mountComp()" disabled>2. 挂载组件</button>
-      <button class="btn btn-update" id="parentUpdateBtn" onclick="parentUpdate()" disabled>3. 父组件更新</button>
-      <button class="btn btn-child" id="childUpdateBtn" onclick="childUpdate()" disabled>4. 子组件自更新</button>
+    <!-- 右边 -->
+    <div class="panel">
+
+      <div class="panel-title">组件生命周期流程</div>
+
+      <div class="flow">
+        <div class="step" id="s1">create instance</div>
+        <div class="step" id="s2">setupComponent</div>
+        <div class="step" id="s3">render()</div>
+        <div class="step" id="s4">create subTree</div>
+        <div class="step" id="s5">mountElement</div>
+        <div class="step" id="s6">patch</div>
+      </div>
+
+      <div class="code" id="codeBox">
+等待初始化...
+      </div>
+
     </div>
 
-    <hr class="divider">
-    <div class="status-box" id="logArea">
-      点击「初始化」开始
-    </div>
   </div>
 
-<script>
-let parentCount = 0
-let childCount = 0
-let childPropTitle = '---'
-let isMounted = false
+  <!-- 按钮 -->
+  <div class="btns">
 
-/* ===== 模拟组件挂载 ===== */
-function mountComponent(name, props, setupState) {
-  debugger // ① mountComponent：创建组件实例
+    <button class="b1" id="setupBtn" onclick="setup()">
+      1. 初始化
+    </button>
+
+    <button class="b2" id="mountBtn" onclick="mountApp()" disabled>
+      2. 挂载组件
+    </button>
+
+    <button class="b3" id="parentBtn" onclick="parentUpdate()" disabled>
+      3. 父组件更新
+    </button>
+
+    <button class="b4" id="childBtn" onclick="childUpdate()" disabled>
+      4. 子组件自更新
+    </button>
+
+    <button class="b5" id="propBtn" onclick="changeProps()" disabled>
+      5. 修改 props
+    </button>
+
+  </div>
+
+  <!-- 日志 -->
+  <div class="log" id="logArea">
+点击「初始化」开始
+  </div>
+
+</div>
+
+<script>
+
+/* ======================================================
+   全局状态
+====================================================== */
+
+let parentInstance = null
+let childInstance = null
+
+let domContainer = null
+
+/* ======================================================
+   UI 辅助
+====================================================== */
+
+function log(msg){
+  const t = new Date().toLocaleTimeString()
+  const area = document.getElementById('logArea')
+  area.innerHTML = `[${t}] ${msg}<br>` + area.innerHTML
+}
+
+function activeStep(id){
+
+  document.querySelectorAll('.step').forEach(el=>{
+    el.className='step done'
+  })
+
+  const target = document.getElementById(id)
+
+  if(target){
+    target.className='step active'
+  }
+}
+
+function resetSteps(){
+  document.querySelectorAll('.step').forEach(el=>{
+    el.className='step'
+  })
+}
+
+function updateUI(){
+
+  document.getElementById('parentCount').innerText =
+    parentInstance?.setupState.count ?? 0
+
+  document.getElementById('childCount').innerText =
+    childInstance?.setupState.count ?? 0
+
+  document.getElementById('childTitle').innerText =
+    childInstance?.props.title ?? '---'
+}
+
+function showCode(code){
+  document.getElementById('codeBox').innerHTML = code
+}
+
+function flash(el, cls='active'){
+  el.classList.add(cls)
+  setTimeout(()=>{
+    el.classList.remove(cls)
+  },700)
+}
+
+/* ======================================================
+   h()
+====================================================== */
+
+function h(type, props, children){
+
+  debugger // h() 创建 VNode
+
+  return {
+    type,
+    props: props || {},
+    children,
+    el:null
+  }
+}
+
+/* ======================================================
+   创建组件实例
+====================================================== */
+
+function createComponentInstance(vnode){
+
+  debugger // ① createComponentInstance
+
+  activeStep('s1')
 
   const instance = {
-    name,
-    props: { ...props },
-    setupState: { ...setupState },
-    isMounted: false,
-    vnode: null,
-    subTree: null
+
+    vnode,
+
+    type:vnode.type,
+
+    props:vnode.props || {},
+
+    setupState:{},
+
+    render:null,
+
+    subTree:null,
+
+    isMounted:false
+
   }
 
-  debugger // ② 组件实例已创建：name = ${name}
+  debugger // instance 已创建
+
   return instance
 }
 
-function setupComponent(instance) {
-  debugger // ③ setupComponent：执行 setup，建立响应式连接
+/* ======================================================
+   setupComponent
+====================================================== */
 
-  const setupResult = instance.setupState
-  debugger // setup 执行完毕，绑定 props/state
+function setupComponent(instance){
 
-  return () => {
-    debugger // render 函数：生成 subTree
-    return { tag: 'div', children: `Hello ${instance.props.title}` }
+  debugger // ② setupComponent
+
+  activeStep('s2')
+
+  const Component = instance.type
+
+  const setupResult = Component.setup(instance.props)
+
+  debugger // setup() 执行结束
+
+  instance.setupState = setupResult
+
+  instance.render = Component.render.bind(instance)
+
+  debugger // render 函数绑定完成
+}
+
+/* ======================================================
+   mountComponent
+====================================================== */
+
+function mountComponent(vnode, container){
+
+  debugger // mountComponent 开始
+
+  const instance = createComponentInstance(vnode)
+
+  setupComponent(instance)
+
+  debugger // ③ render()
+
+  activeStep('s3')
+
+  const subTree = instance.render()
+
+  debugger // render() 返回 VNode subTree
+
+  instance.subTree = subTree
+
+  activeStep('s4')
+
+  debugger // ④ 开始 mount subTree
+
+  mountElement(subTree, container)
+
+  instance.isMounted = true
+
+  return instance
+}
+
+/* ======================================================
+   mountElement
+====================================================== */
+
+function mountElement(vnode, container){
+
+  debugger // ⑤ mountElement
+
+  activeStep('s5')
+
+  const el = document.createElement(vnode.type)
+
+  vnode.el = el
+
+  if(typeof vnode.children === 'string'){
+
+    debugger // 设置文本 children
+
+    el.textContent = vnode.children
   }
-}
 
-function mountElement(vnode, container) {
-  debugger // ⑤ mountElement：创建 DOM
-  const el = document.createElement(vnode.tag || 'div')
-  el.textContent = typeof vnode.children === 'string' ? vnode.children : ''
   container.appendChild(el)
-  debugger // ⑥ DOM 已挂载
-  return el
+
+  debugger // DOM append 完成
 }
 
-/* ===== 更新流程 ===== */
-function patch(prev, next, container) {
-  debugger // 进入 patch：对比旧新 VNode，更新 DOM
+/* ======================================================
+   patch
+====================================================== */
 
-  debugger // 比较 props、children...
-  container.textContent = typeof next.children === 'string' ? next.children : container.textContent
+function patch(n1, n2){
+
+  debugger // ⑥ patch
+
+  activeStep('s6')
+
+  const el = n2.el = n1.el
+
+  debugger // 对比 children
+
+  if(n1.children !== n2.children){
+
+    debugger // children 不同 → 更新 DOM
+
+    el.textContent = n2.children
+  }
 
   debugger // patch 完成
 }
 
-/* ===== 按钮操作 ===== */
-function setup() {
+/* ======================================================
+   Parent Component
+====================================================== */
+
+const ParentComponent = {
+
+  setup(){
+
+    debugger // Parent setup()
+
+    return {
+      count:0
+    }
+  },
+
+  render(){
+
+    debugger // Parent render()
+
+    document.getElementById('parentRender').innerText =
+      'render 执行'
+
+    return h(
+      'div',
+      null,
+      `Parent Count: ${this.setupState.count}`
+    )
+  }
+}
+
+/* ======================================================
+   Child Component
+====================================================== */
+
+const ChildComponent = {
+
+  setup(props){
+
+    debugger // Child setup()
+
+    return {
+      count:50
+    }
+  },
+
+  render(){
+
+    debugger // Child render()
+
+    document.getElementById('childRender').innerText =
+      'render 执行'
+
+    return h(
+      'div',
+      null,
+      `Child => ${this.props.title} / ${this.setupState.count}`
+    )
+  }
+}
+
+/* ======================================================
+   初始化
+====================================================== */
+
+function setup(){
+
+  debugger // 初始化系统
+
+  resetSteps()
+
+  domContainer = document.getElementById('domRoot')
+
+  domContainer.innerHTML = 'DOM 尚未挂载'
+
   document.getElementById('setupBtn').disabled = true
-  parentCount = 0
-  childCount = 0
-  childPropTitle = '---'
-  isMounted = false
-  document.getElementById('propsDisplay').innerText = 'props: { title: "---" }'
   document.getElementById('mountBtn').disabled = false
-  updateDisplay()
+
+  showCode(
+`createComponentInstance(vnode)
+↓
+setupComponent(instance)
+↓
+render()
+↓
+生成 subTree
+↓
+mountElement()
+`
+  )
+
   log('初始化完成')
 }
 
-function mountComp() {
-  debugger // 点击：开始挂载组件
+/* ======================================================
+   挂载
+====================================================== */
+
+function mountApp(){
+
+  debugger // 开始挂载应用
+
   document.getElementById('mountBtn').disabled = true
 
-  // 创建父组件实例
-  debugger // 创建 ParentComponent
-  const parent = mountComponent('Parent', {}, { count: 0 })
-  parentCount = parent.setupState.count
+  domContainer.innerHTML = ''
 
-  // 创建子组件
-  debugger // 创建 ChildComponent
-  const child = mountComponent('Child', { title: 'Hello from Parent' }, { count: 50 })
-  childPropTitle = child.props.title
-  childCount = child.setupState.count
+  /* Parent */
 
-  // setup
-  debugger // Parent setup
-  const render = setupComponent(parent)
-  debugger // Child setup
-  setupComponent(child)
+  const parentVNode = {
+    type:ParentComponent,
+    props:{}
+  }
 
-  // mount
-  debugger // ④ 开始渲染 subTree
-  const subTree = render()
-  debugger // 挂载到 DOM
-  mountElement(subTree, document.getElementById('compTree'))
+  parentInstance =
+    mountComponent(parentVNode, domContainer)
 
-  isMounted = true
-  document.getElementById('childComp').classList.add('mounted')
-  document.getElementById('propsDisplay').innerText = `props: { title: "Hello from Parent" }`
-  document.getElementById('parentUpdateBtn').disabled = false
-  document.getElementById('childUpdateBtn').disabled = false
+  /* Child */
 
-  updateDisplay()
-  log('组件已挂载：Parent > Child')
+  debugger // 创建 Child vnode
+
+  document.getElementById('propsFlow')
+    .classList.add('flow')
+
+  const childVNode = {
+    type:ChildComponent,
+    props:{
+      title:'Hello Parent'
+    }
+  }
+
+  childInstance =
+    mountComponent(childVNode, domContainer)
+
+  updateUI()
+
+  document.getElementById('propsFlow')
+    .innerText =
+    `props: { title: "Hello Parent" }`
+
+  document.getElementById('parentBtn').disabled = false
+  document.getElementById('childBtn').disabled = false
+  document.getElementById('propBtn').disabled = false
+
+  document.getElementById('childComp')
+    .classList.add('active')
+
+  showCode(
+`ParentComponent
+ └── render()
+      └── subTree(div)
+
+ChildComponent
+ └── props.title = "Hello Parent"
+ └── render()
+      └── subTree(div)
+`
+  )
+
+  log('组件挂载完成')
 }
 
-function parentUpdate() {
-  debugger // 父组件更新：修改 state.count
-  document.getElementById('parentUpdateBtn').disabled = true
+/* ======================================================
+   父组件更新
+====================================================== */
 
-  parentCount++
-  debugger // count = ${parentCount}，重新渲染
-  debugger // patch 子组件：props.title 不变，子组件不更新
+function parentUpdate(){
 
-  document.getElementById('parentUpdateBtn').disabled = false
-  updateDisplay()
-  log(`父组件更新：count → ${parentCount}`)
+  debugger // 父组件更新
+
+  flash(document.getElementById('parentComp'),'patching')
+
+  parentInstance.setupState.count++
+
+  debugger // 重新执行 Parent render()
+
+  const prevTree = parentInstance.subTree
+
+  const nextTree = parentInstance.render()
+
+  parentInstance.subTree = nextTree
+
+  patch(prevTree, nextTree)
+
+  debugger // Child props 未变化 → Child 不更新
+
+  document.getElementById('childComp')
+    .classList.add('skipped')
+
+  setTimeout(()=>{
+    document.getElementById('childComp')
+      .classList.remove('skipped')
+  },900)
+
+  updateUI()
+
+  showCode(
+`Parent state 改变
+↓
+Parent render()
+↓
+生成新的 subTree
+↓
+patch(oldTree,newTree)
+
+Child props 没变
+↓
+子组件跳过更新
+`
+  )
+
+  log(`父组件更新 count = ${parentInstance.setupState.count}`)
 }
 
-function childUpdate() {
+/* ======================================================
+   子组件自更新
+====================================================== */
+
+function childUpdate(){
+
   debugger // 子组件内部更新
-  document.getElementById('childUpdateBtn').disabled = true
 
-  childCount++
-  debugger // 子组件自更新：只影响自身，不影响父组件
+  flash(document.getElementById('childComp'),'patching')
 
-  document.getElementById('childUpdateBtn').disabled = false
-  updateDisplay()
-  log(`子组件自更新：count → ${childCount}`)
+  childInstance.setupState.count++
+
+  debugger // Child render()
+
+  const prevTree = childInstance.subTree
+
+  const nextTree = childInstance.render()
+
+  childInstance.subTree = nextTree
+
+  patch(prevTree,nextTree)
+
+  updateUI()
+
+  showCode(
+`Child setupState 改变
+↓
+Child render()
+↓
+patch()
+
+只更新子组件自身
+父组件不会重新 render
+`
+  )
+
+  log(`子组件更新 count = ${childInstance.setupState.count}`)
 }
 
-function updateDisplay() {
-  document.getElementById('parentCount').innerText = parentCount
-  document.getElementById('childTitle').innerText = childPropTitle
-  document.getElementById('childCount').innerText = childCount
+/* ======================================================
+   修改 props
+====================================================== */
+
+function changeProps(){
+
+  debugger // Parent 修改 props
+
+  flash(document.getElementById('parentComp'),'patching')
+
+  document.getElementById('propsFlow')
+    .classList.add('flow')
+
+  const prevTree = childInstance.subTree
+
+  childInstance.props.title =
+    'New Props ' + Math.floor(Math.random()*100)
+
+  debugger // props 改变 → Child 需要重新 render
+
+  const nextTree = childInstance.render()
+
+  childInstance.subTree = nextTree
+
+  patch(prevTree,nextTree)
+
+  updateUI()
+
+  document.getElementById('propsFlow')
+    .innerText =
+    `props: { title: "${childInstance.props.title}" }`
+
+  showCode(
+`Parent 修改 props
+↓
+Child props 变化
+↓
+Child render()
+↓
+patch()
+
+因为 props 变了
+所以子组件必须更新
+`
+  )
+
+  log(`props 更新: ${childInstance.props.title}`)
 }
 
-function log(msg) {
-  const area = document.getElementById('logArea')
-  const t = new Date().toLocaleTimeString()
-  area.innerHTML = `[${t}] ${msg}\n` + area.innerHTML
-}
 </script>
+
 </body>
 </html>

@@ -1,341 +1,254 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>手写Vue3 Watch（Debugger版）</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
-      background: #070b09;
-      color: #d0e4da;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 40px 20px;
-    }
-    .box {
-      background: #0d1612;
-      border: 1px solid #1a2e25;
-      border-radius: 12px;
-      padding: 40px 48px;
-      text-align: center;
-      max-width: 560px;
-      width: 100%;
-    }
-    .box h1 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-      color: #d0e4da;
-    }
-    .box h1 small {
-      display: block;
-      font-size: 0.72rem;
-      font-weight: 400;
-      color: #5e8a76;
-      margin-top: 6px;
-    }
-    .display-area {
-      margin: 24px 0;
-      padding: 20px;
-      background: #0a100d;
-      border: 1px solid #1a2e25;
-      border-radius: 8px;
-    }
-    .display-row {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 16px;
-      margin: 6px 0;
-    }
-    .display-label { font-size: 0.78rem; color: #5e8a76; }
-    .display-val {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-    }
-    .display-val.count { color: #f59e0b; font-size: 1.5rem; }
-    .display-val.nested { color: #60a5fa; font-size: 1.5rem; }
-    .display-val.old { color: #5e8a76; font-size: 1rem; }
-    .display-val.new { color: #10b981; font-size: 1rem; }
-    .display-val.detail { color: #8b5cf6; font-size: 0.85rem; }
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin: 20px 0;
-      flex-wrap: wrap;
-    }
-    .btn {
-      padding: 10px 18px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s;
-      color: white;
-    }
-    .btn-setup { background: linear-gradient(135deg, #6b7280, #9ca3af); }
-    .btn-setup:hover { box-shadow: 0 4px 20px rgba(156, 163, 175, 0.35); transform: translateY(-1px); }
-    .btn-watch { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 2px 12px rgba(16, 185, 129, 0.2); }
-    .btn-watch:hover { box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35); transform: translateY(-1px); }
-    .btn-change { background: linear-gradient(135deg, #b91c1c, #ef4444); box-shadow: 0 2px 12px rgba(239, 68, 68, 0.2); }
-    .btn-change:hover { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35); transform: translateY(-1px); }
-    .btn-nested { background: linear-gradient(135deg, #1d4ed8, #60a5fa); box-shadow: 0 2px 12px rgba(96, 165, 250, 0.2); }
-    .btn-nested:hover { box-shadow: 0 4px 20px rgba(96, 165, 250, 0.35); transform: translateY(-1px); }
-    .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
-    .tip-box {
-      background: #0a100d;
-      border: 1px solid #1a2e25;
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin-top: 20px;
-      text-align: left;
-      line-height: 1.9;
-    }
-    .tip-box p { font-size: 0.78rem; color: #5e8a76; }
-    .tip-box strong { color: #d0e4da; }
-    kbd {
-      background: rgba(94, 138, 118, 0.15);
-      border: 1px solid #1a2e25;
-      border-radius: 3px;
-      padding: 1px 6px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      color: #10b981;
-    }
-    code { color: #60a5fa; font-family: 'JetBrains Mono', monospace; }
-    .divider {
-      border: none;
-      border-top: 1px solid #1a2e25;
-      margin: 16px 0;
-    }
-    .status-box {
-      background: #070b09;
-      border: 1px solid #1a2e25;
-      border-radius: 6px;
-      padding: 10px 14px;
-      margin: 10px 0;
-      font-size: 0.75rem;
-      font-family: monospace;
-      line-height: 1.7;
-      text-align: left;
-    }
-    .status-box .hl { color: #10b981; font-weight: 700; }
-    .status-box .err { color: #ef4444; }
-    .status-box .info { color: #60a5fa; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vue Watch（教学优化Debugger版）</title>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: system-ui;
+    background:#070b09;
+    color:#d0e4da;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    padding:40px;
+  }
+  .box {
+    width:600px;
+    background:#0d1612;
+    border:1px solid #1a2e25;
+    border-radius:12px;
+    padding:40px;
+  }
+  .val {
+    font-family: monospace;
+    margin:6px 0;
+  }
+  .count { color:#f59e0b; }
+  .nested { color:#60a5fa; }
+
+  button {
+    margin:6px;
+    padding:10px 14px;
+    border:none;
+    border-radius:8px;
+    font-weight:700;
+    color:white;
+    cursor:pointer;
+  }
+  .init { background:#6b7280; }
+  .watch { background:#10b981; }
+  .change { background:#ef4444; }
+  .nestedBtn { background:#2563eb; }
+
+  button:disabled { opacity:0.4; }
+</style>
 </head>
+
 <body>
-  <div class="box">
-    <h1>
-      Vue Watch Debugger
-      <small>先打开 F12 → 按顺序点击按钮逐步学习</small>
-    </h1>
 
-    <div class="display-area">
-      <div class="display-row">
-        <span class="display-label">state.count</span>
-        <span class="display-val count" id="countVal">0</span>
-      </div>
-      <div class="display-row">
-        <span class="display-label">state.nested.num</span>
-        <span class="display-val nested" id="nestedVal">0</span>
-      </div>
-      <hr class="divider">
-      <div class="display-row">
-        <span class="display-label">旧值</span>
-        <span class="display-val old" id="oldVal">—</span>
-      </div>
-      <div class="display-row">
-        <span class="display-label">新值</span>
-        <span class="display-val new" id="newVal">—</span>
-      </div>
-      <div class="display-row" style="font-size:0.75rem;color:#5e8a76;font-family:monospace">
-        <span>traverse 深度：<span id="depthVal">0</span></span>
-        <span style="margin:0 8px">|</span>
-        <span>回调次数：<span id="cbCount">0</span></span>
-      </div>
-    </div>
+<div class="box">
+  <h3>Vue Watch Debugger（优化版）</h3>
 
-    <div class="btn-group">
-      <button class="btn btn-setup" id="setupBtn" onclick="setup()">1. 初始化</button>
-      <button class="btn btn-watch" id="watchBtn" onclick="setupWatch()" disabled>2. 创建 watch</button>
-      <button class="btn btn-change" id="changeBtn" onclick="changeCount()" disabled>3. 改 state.count</button>
-      <button class="btn btn-nested" id="nestedBtn" onclick="changeNested()" disabled>4. 改 nested.num</button>
-    </div>
+  <div class="val count">count: <span id="count">0</span></div>
+  <div class="val nested">nested.num: <span id="nested">0</span></div>
 
-    <hr class="divider">
-    <div class="status-box" id="logArea">
-      点击「初始化」开始
-    </div>
-  </div>
+  <div class="val">回调次数: <span id="cb">0</span></div>
+  <div class="val">traverse深度: <span id="depth">0</span></div>
+
+  <button class="init" onclick="init()">初始化</button>
+  <button class="watch" onclick="createWatch()" id="w" disabled>创建watch</button>
+  <button class="change" onclick="incCount()" id="c1" disabled>改count</button>
+  <button class="nestedBtn" onclick="incNested()" id="c2" disabled>改nested</button>
+</div>
 
 <script>
-/* ===== 响应式基础 ===== */
+
+/* ================= reactive ================= */
+
 let activeEffect = null
 const bucket = new Map()
-let _depth = 0
+let state = null
 
 function effect(fn, options = {}) {
-  const effectFn = () => { activeEffect = effectFn; fn() }
-  effectFn.options = options
-  effectFn()
-  return effectFn
+  const e = () => {
+    debugger // ① effect执行开始
+    activeEffect = e
+    const res = fn()
+    activeEffect = null
+    return res
+  }
+  e.options = options
+  e()
+  return e
 }
 
-function track(target, key) {
+function track(t, k) {
   if (!activeEffect) return
-  let depsMap = bucket.get(target)
-  if (!depsMap) { depsMap = new Map(); bucket.set(target, depsMap) }
-  let deps = depsMap.get(key)
-  if (!deps) { deps = new Set(); depsMap.set(key, deps) }
-  deps.add(activeEffect)
+
+  let map = bucket.get(t)
+  if (!map) { map = new Map(); bucket.set(t, map) }
+
+  let set = map.get(k)
+  if (!set) { set = new Set(); map.set(k, set) }
+
+  set.add(activeEffect)
 }
 
-function trigger(target, key) {
-  const depsMap = bucket.get(target)
-  if (!depsMap) return
-  const effects = depsMap.get(key)
-  effects && effects.forEach(fn => {
-    if (fn.options.scheduler) { fn.options.scheduler(fn) }
-    else { fn() }
+function trigger(t, k) {
+  const map = bucket.get(t)
+  if (!map) return
+
+  const set = map.get(k)
+  if (!set) return
+
+  set.forEach(fn => {
+
+    debugger // ② trigger触发
+
+    if (fn.options.scheduler) {
+      debugger // ③ watch走scheduler（异步更新）
+      fn.options.scheduler(fn)
+    } else {
+      fn()
+    }
   })
 }
 
-function reactive(data) {
-  return new Proxy(data, {
-    get(target, key) { track(target, key); return target[key] },
-    set(target, key, val) { target[key] = val; trigger(target, key); return true }
+function reactive(obj) {
+  return new Proxy(obj, {
+    get(t, k) {
+      track(t, k)
+      return t[k]
+    },
+    set(t, k, v) {
+      t[k] = v
+      trigger(t, k)
+      return true
+    }
   })
 }
 
-let state = null
-let watchObj = null
-let _cbCount = 0
+/* ================= traverse ================= */
 
-/* ===== traverse ===== */
-function traverse(value, seen = new Set()) {
-  debugger // traverse 进入：当前 value 是什么？
-  if (typeof value !== 'object' || value === null || seen.has(value)) return
-  seen.add(value)
+let depth = 0
 
-  for (const key in value) {
-    _depth++
-    document.getElementById('depthVal').innerText = _depth
-    debugger // 递归访问：key = "${key}"
-    traverse(value[key], seen)
-    debugger // 返回上一层
-    _depth--
-    document.getElementById('depthVal').innerText = _depth
+function traverse(val, seen = new Set()) {
+
+  debugger // ④ traverse开始
+
+  if (typeof val !== 'object' || val === null || seen.has(val)) return
+  seen.add(val)
+
+  for (const k in val) {
+
+    depth++
+    document.getElementById('depth').innerText = depth
+
+    debugger // ⑤ 访问属性 → 触发track
+
+    traverse(val[k], seen)
+
+    depth--
+    document.getElementById('depth').innerText = depth
   }
 
-  debugger // traverse 完毕
-  return value
+  return val
 }
 
-/* ===== watch ===== */
-function watch(source, cb, options = {}) {
-  debugger // ① 进入 watch：建立响应式连接
+/* ================= watch ================= */
+
+let cbCount = 0
+
+function watch(source, cb) {
+
+  debugger // ⑥ watch初始化
 
   let getter
+
   if (typeof source === 'function') {
     getter = source
   } else {
-    debugger // source 是响应式对象 → traverse 深层追踪
     getter = () => traverse(source)
   }
 
-  let oldValue, newValue
+  let oldValue
+  let newValue
 
-  const scheduler = () => {
-    debugger // ⑤ scheduler 执行：依赖变化了！
-    newValue = effectFn()
-    debugger // ⑥ 新值已获取，准备执行回调
+  const job = () => {
+
+    debugger // ⑦ scheduler触发（依赖变化）
+
+    newValue = runner()
+    cbCount++
+    document.getElementById('cb').innerText = cbCount
+
     cb(newValue, oldValue)
-    debugger // ⑦ 回调执行完，更新旧值
+
     oldValue = newValue
   }
 
-  const effectFn = effect(() => getter(), { scheduler })
+  const runner = effect(() => {
 
-  debugger // ② effect 已创建，getter 已执行（依赖已收集）
-  oldValue = effectFn()
-  debugger // ③ 首次执行获取初始值
+    debugger // ⑧ watch getter执行（收集依赖）
 
-  return () => { /* unwatch */ }
+    return getter()
+
+  }, {
+    scheduler: job
+  })
+
+  oldValue = runner()
+
+  debugger // ⑨ 初始值完成
 }
 
-/* ===== 按钮操作 ===== */
-function setup() {
-  document.getElementById('setupBtn').disabled = true
+/* ================= demo ================= */
 
-  state = reactive({ count: 0, nested: { num: 0 } })
+function init() {
+  state = reactive({
+    count: 0,
+    nested: { num: 0 }
+  })
 
-  document.getElementById('watchBtn').disabled = false
-  updateDisplay()
-  log('初始化完成：reactive state 已创建')
+  document.getElementById('w').disabled = false
 }
 
-function setupWatch() {
-  debugger // 准备创建 watch
+function createWatch() {
 
-  document.getElementById('watchBtn').disabled = true
+  watch(() => {
+    debugger // ⑩ watch source getter
+    return { c: state.count, n: state.nested.num }
+  }, (nv, ov) => {
 
-  watchObj = watch(
-    () => {
-      debugger // watch getter: 读取 state.count 和 state.nested.num
-      return { count: state.count, nested: { num: state.nested.num } }
-    },
-    (newVal, oldVal) => {
-      _cbCount++
-      document.getElementById('cbCount').innerText = _cbCount
-      document.getElementById('oldVal').innerText = JSON.stringify(oldVal)
-      document.getElementById('newVal').innerText = JSON.stringify(newVal)
-      debugger // ⑧ 回调执行：newVal 变了
-      log(`回调触发：${JSON.stringify(oldVal)} → ${JSON.stringify(newVal)}`)
-    }
-  )
+    debugger // ⑪ callback执行
 
-  document.getElementById('changeBtn').disabled = false
-  document.getElementById('nestedBtn').disabled = false
-  updateDisplay()
-  log('watch 已创建，getter 追踪了 count 和 nested.num')
+    log(JSON.stringify(ov) + " → " + JSON.stringify(nv))
+  })
+
+  document.getElementById('c1').disabled = false
+  document.getElementById('c2').disabled = false
 }
 
-function changeCount() {
-  debugger // 用户操作：修改 state.count
+function incCount() {
   state.count++
-  debugger // count 已变化，scheduler → getter → callback
-  updateDisplay()
-  log(`state.count → ${state.count}`)
+  document.getElementById('count').innerText = state.count
 }
 
-function changeNested() {
-  debugger // 用户操作：修改 state.nested.num
+function incNested() {
   state.nested.num++
-  debugger // nested.num 已变化，scheduler → getter → traverse → callback
-  updateDisplay()
-  log(`state.nested.num → ${state.nested.num}`)
-}
-
-function updateDisplay() {
-  if (!state) return
-  document.getElementById('countVal').innerText = state.count
-  document.getElementById('nestedVal').innerText = state.nested.num
+  document.getElementById('nested').innerText = state.nested.num
 }
 
 function log(msg) {
-  const area = document.getElementById('logArea')
-  const t = new Date().toLocaleTimeString()
-  area.innerHTML = `[${t}] ${msg}\n` + area.innerHTML
+  console.log(msg)
 }
+
 </script>
+
 </body>
 </html>

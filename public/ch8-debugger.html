@@ -1,400 +1,648 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>手写Vue3 Diff（Debugger版）</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vue3 Diff Debugger</title>
+
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+      font-family: 'Noto Sans SC', system-ui, sans-serif;
       background: #070b09;
       color: #d0e4da;
+      min-height: 100vh;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
       padding: 40px 20px;
     }
+
     .box {
+      width: 100%;
+      max-width: 700px;
       background: #0d1612;
       border: 1px solid #1a2e25;
-      border-radius: 12px;
-      padding: 40px 48px;
-      text-align: center;
-      max-width: 640px;
-      width: 100%;
+      border-radius: 14px;
+      padding: 40px;
     }
-    .box h1 {
-      font-size: 1.1rem;
-      font-weight: 700;
+
+    h1 {
+      font-size: 1.15rem;
       margin-bottom: 6px;
-      color: #d0e4da;
     }
-    .box h1 small {
+
+    h1 small {
       display: block;
+      margin-top: 6px;
+      color: #5e8a76;
       font-size: 0.72rem;
       font-weight: 400;
-      color: #5e8a76;
-      margin-top: 6px;
     }
+
     .display-area {
-      margin: 24px 0;
-      padding: 20px;
+      margin-top: 24px;
       background: #0a100d;
       border: 1px solid #1a2e25;
-      border-radius: 8px;
+      border-radius: 10px;
+      padding: 20px;
     }
-    .node-lists {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+
     .node-row {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+      margin-bottom: 16px;
     }
+
     .row-label {
-      font-size: 0.68rem;
+      display: block;
+      margin-bottom: 8px;
       color: #5e8a76;
-      font-weight: 600;
+      font-size: 0.72rem;
     }
+
     .row-cells {
       display: flex;
-      gap: 6px;
+      gap: 8px;
+      flex-wrap: wrap;
       justify-content: center;
     }
+
     .cell {
-      width: 48px;
-      height: 42px;
-      border-radius: 8px;
+      width: 52px;
+      height: 46px;
+      border-radius: 10px;
       border: 1px solid #1a2e25;
-      background: rgba(7,11,9,0.6);
+      background: rgba(7,11,9,0.5);
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: #d0e4da;
-      transition: all 0.3s;
       position: relative;
+      font-family: monospace;
+      font-size: 0.95rem;
+      font-weight: bold;
+      transition: 0.3s;
     }
-    .cell.start { border-color: #60a5fa; background: rgba(96,165,250,0.08); }
-    .cell.end { border-color: #f59e0b; background: rgba(245,158,11,0.08); }
-    .cell.match { border-color: #10b981; background: rgba(16,185,129,0.08); }
-    .cell.removed { opacity: 0.2; }
-    .cell.new { border-color: #ef4444; background: rgba(239,68,68,0.08); }
-    .cell .idx {
-      font-size: 0.45rem;
-      color: #5e8a76;
+
+    .cell.start {
+      border-color: #60a5fa;
+      background: rgba(96,165,250,0.08);
+    }
+
+    .cell.end {
+      border-color: #f59e0b;
+      background: rgba(245,158,11,0.08);
+    }
+
+    .cell.match {
+      border-color: #10b981;
+      background: rgba(16,185,129,0.08);
+    }
+
+    .cell.removed {
+      opacity: 0.2;
+    }
+
+    .cell.new {
+      border-color: #ef4444;
+      background: rgba(239,68,68,0.08);
+    }
+
+    .idx {
       position: absolute;
       top: 2px;
       right: 4px;
+      font-size: 0.5rem;
+      color: #5e8a76;
     }
-    .match-info {
-      margin: 6px 0;
-      font-family: 'JetBrains Mono', monospace;
+
+    .compare-box {
+      margin: 18px 0;
+      padding: 12px;
+      border-radius: 8px;
+      background: rgba(7,11,9,0.5);
+      border: 1px solid #1a2e25;
+      text-align: center;
+      font-family: monospace;
       font-size: 0.75rem;
       color: #8b5cf6;
-      min-height: 20px;
+      line-height: 1.7;
+      min-height: 58px;
     }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #1a2e25;
+      margin: 18px 0;
+    }
+
     .ops-list {
       text-align: left;
       font-family: monospace;
-      font-size: 0.7rem;
-      line-height: 1.6;
+      font-size: 0.72rem;
+      line-height: 1.7;
     }
-    .ops-list .op { padding: 2px 0; border-left: 3px solid #1a2e25; padding-left: 8px; margin: 2px 0; }
-    .ops-list .op.move { border-left-color: #f59e0b; color: #f59e0b; }
-    .ops-list .op.add { border-left-color: #60a5fa; color: #60a5fa; }
-    .ops-list .op.remove { border-left-color: #ef4444; color: #ef4444; }
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin: 20px 0;
-      flex-wrap: wrap;
+
+    .op {
+      padding: 4px 0 4px 10px;
+      border-left: 3px solid #1a2e25;
+      margin: 4px 0;
     }
-    .btn {
-      padding: 10px 18px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s;
-      color: white;
+
+    .op.move {
+      border-color: #f59e0b;
+      color: #f59e0b;
     }
-    .btn-setup { background: linear-gradient(135deg, #6b7280, #9ca3af); }
-    .btn-setup:hover { box-shadow: 0 4px 20px rgba(156, 163, 175, 0.35); transform: translateY(-1px); }
-    .btn-step { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 2px 12px rgba(16, 185, 129, 0.2); }
-    .btn-step:hover { box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35); transform: translateY(-1px); }
-    .btn-auto { background: linear-gradient(135deg, #7c3aed, #a78bfa); box-shadow: 0 2px 12px rgba(167, 139, 250, 0.2); }
-    .btn-auto:hover { box-shadow: 0 4px 20px rgba(167, 139, 250, 0.35); transform: translateY(-1px); }
-    .btn-reset { background: rgba(94,138,118,0.15); color: #5e8a76; }
-    .btn-reset:hover { background: rgba(94,138,118,0.25); }
-    .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
-    .tip-box {
-      background: #0a100d;
-      border: 1px solid #1a2e25;
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin-top: 20px;
-      text-align: left;
-      line-height: 1.9;
+
+    .op.add {
+      border-color: #60a5fa;
+      color: #60a5fa;
     }
-    .tip-box p { font-size: 0.78rem; color: #5e8a76; }
-    .tip-box strong { color: #d0e4da; }
-    kbd {
-      background: rgba(94, 138, 118, 0.15);
-      border: 1px solid #1a2e25;
-      border-radius: 3px;
-      padding: 1px 6px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
+
+    .op.none {
+      border-color: #10b981;
       color: #10b981;
     }
-    code { color: #60a5fa; font-family: 'JetBrains Mono', monospace; }
-    .divider { border: none; border-top: 1px solid #1a2e25; margin: 16px 0; }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 24px;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-init {
+      background: #6b7280;
+    }
+
+    .btn-step {
+      background: #10b981;
+    }
+
+    .btn-auto {
+      background: #7c3aed;
+    }
+
+    .btn-reset {
+      background: #334155;
+    }
+
     .status-box {
+      margin-top: 24px;
+      padding: 14px;
+      border-radius: 8px;
       background: #070b09;
       border: 1px solid #1a2e25;
-      border-radius: 6px;
-      padding: 10px 14px;
-      margin-top: 10px;
-      font-size: 0.75rem;
       font-family: monospace;
-      line-height: 1.7;
-      text-align: left;
-      max-height: 160px;
+      font-size: 0.72rem;
+      line-height: 1.8;
+      max-height: 180px;
       overflow-y: auto;
     }
   </style>
 </head>
-<body>
-  <div class="box">
-    <h1>
-      Vue Diff Debugger
-      <small>先打开 F12 → 按顺序点击按钮逐步学习</small>
-    </h1>
 
-    <div class="display-area">
-      <div class="node-lists" id="diffDisplay">
-        <div class="node-row">
-          <span class="row-label">旧 children</span>
-          <div class="row-cells" id="oldCells"></div>
-        </div>
-        <div class="match-info" id="matchInfo">点击「初始化」开始</div>
-        <div class="node-row">
-          <span class="row-label">新 children</span>
-          <div class="row-cells" id="newCells"></div>
-        </div>
-      </div>
-      <hr class="divider">
-      <div class="display-label" style="font-size:0.72rem;margin-bottom:6px">DOM 操作</div>
-      <div class="ops-list" id="opsList">
-        <div style="color:#5e8a76;font-size:0.7rem">（尚未开始）</div>
-      </div>
+<body>
+
+<div class="box">
+
+  <h1>
+    Vue3 Diff Debugger（教学完整版）
+    <small>F12 → 按顺序点击按钮 → 观察双端 Diff 全流程</small>
+  </h1>
+
+  <div class="display-area">
+
+    <div class="node-row">
+      <span class="row-label">旧 children</span>
+      <div class="row-cells" id="oldCells"></div>
     </div>
 
-    <div class="btn-group">
-      <button class="btn btn-setup" id="setupBtn" onclick="setup()">1. 初始化</button>
-      <button class="btn btn-step" id="stepBtn" onclick="diffStep()" disabled>2. 执行一步 Diff</button>
-      <button class="btn btn-auto" id="autoBtn" onclick="diffAll()" disabled>3. 全部执行</button>
-      <button class="btn btn-reset" id="resetBtn" onclick="resetDiff()" disabled>重置</button>
+    <div class="compare-box" id="compareBox">
+      点击「初始化」开始
+    </div>
+
+    <div class="node-row">
+      <span class="row-label">新 children</span>
+      <div class="row-cells" id="newCells"></div>
     </div>
 
     <hr class="divider">
-    <div class="status-box" id="logArea">
-      点击「初始化」开始
+
+    <div class="ops-list" id="opsList">
+      <div style="color:#5e8a76">（尚未开始）</div>
     </div>
+
   </div>
 
+  <div class="buttons">
+    <button class="btn-init" id="setupBtn" onclick="setup()">
+      1 初始化
+    </button>
+
+    <button class="btn-step" id="stepBtn" onclick="diffStep()" disabled>
+      2 单步 Diff
+    </button>
+
+    <button class="btn-auto" id="autoBtn" onclick="diffAll()" disabled>
+      3 自动执行
+    </button>
+
+    <button class="btn-reset" id="resetBtn" onclick="resetDiff()" disabled>
+      重置
+    </button>
+  </div>
+
+  <div class="status-box" id="logArea">
+    点击「初始化」开始
+  </div>
+
+</div>
+
 <script>
-/* ===== Diff 数据 ===== */
+
+/* =========================
+   Diff 数据
+========================= */
+
 const oldChildren = ['A', 'B', 'C', 'D']
 const newChildren = ['D', 'A', 'C', 'E', 'B']
 
-let oldStartIdx, oldEndIdx, newStartIdx, newEndIdx
+let oldStartIdx
+let oldEndIdx
+let newStartIdx
+let newEndIdx
+
 let ops = []
 
+/* =========================
+   渲染 children
+========================= */
+
 function renderCells() {
+
   const oldEl = document.getElementById('oldCells')
   const newEl = document.getElementById('newCells')
 
   oldEl.innerHTML = oldChildren.map((item, i) => {
+
     let cls = 'cell'
-    if (i >= oldStartIdx && i <= oldEndIdx) cls += ' active'
+
     if (i === oldStartIdx) cls += ' start'
     if (i === oldEndIdx) cls += ' end'
-    if (i < oldStartIdx || i > oldEndIdx) cls += ' removed'
-    return `<div class="${cls}">${item}<span class="idx">${i}</span></div>`
+
+    if (i < oldStartIdx || i > oldEndIdx) {
+      cls += ' removed'
+    }
+
+    return `
+      <div class="${cls}">
+        ${item}
+        <span class="idx">${i}</span>
+      </div>
+    `
   }).join('')
 
   newEl.innerHTML = newChildren.map((item, i) => {
+
     let cls = 'cell'
-    if (i >= newStartIdx && i <= newEndIdx) cls += ' active'
+
     if (i === newStartIdx) cls += ' start'
     if (i === newEndIdx) cls += ' end'
-    if (i < newStartIdx || i > newEndIdx) cls += ' removed'
-    return `<div class="${cls}">${item}<span class="idx">${i}</span></div>`
+
+    if (i < newStartIdx || i > newEndIdx) {
+      cls += ' removed'
+    }
+
+    return `
+      <div class="${cls}">
+        ${item}
+        <span class="idx">${i}</span>
+      </div>
+    `
   }).join('')
 }
+
+/* =========================
+   DOM操作展示
+========================= */
 
 function renderOps() {
+
   const el = document.getElementById('opsList')
+
   if (ops.length === 0) {
-    el.innerHTML = '<div style="color:#5e8a76;font-size:0.7rem">（尚未执行操作）</div>'
+    el.innerHTML = `<div style="color:#5e8a76">（暂无操作）</div>`
     return
   }
+
   el.innerHTML = ops.map(op => {
-    const cls = op.type === 'move' ? 'move' : op.type === 'add' ? 'add' : 'remove'
-    return `<div class="op ${cls}">${op.msg}</div>`
+    return `
+      <div class="op ${op.type}">
+        ${op.msg}
+      </div>
+    `
   }).join('')
 }
 
-function renderMatchInfo(msg) {
-  document.getElementById('matchInfo').innerText = msg
+/* =========================
+   compare 信息
+========================= */
+
+function renderCompare(msg) {
+  document.getElementById('compareBox').innerHTML = msg
 }
 
-/* ===== patchChildren (单步) ===== */
-function patchStep() {
-  debugger // while 循环开始：检查指针条件
+/* =========================
+   核心 Diff
+========================= */
 
-  if (oldStartIdx > oldEndIdx || newStartIdx > newEndIdx) {
-    debugger // 指针越界！Diff 结束
-    renderMatchInfo('✓ Diff 完成')
+function patchStep() {
+
+  debugger // [Diff] 开始新一轮 while
+
+  if (
+    oldStartIdx > oldEndIdx ||
+    newStartIdx > newEndIdx
+  ) {
+
+    debugger // [End] 指针越界 → Diff结束
+
+    renderCompare('✓ Diff 完成')
+
     document.getElementById('stepBtn').disabled = true
     document.getElementById('autoBtn').disabled = true
+
     return false
   }
 
   const oldS = oldChildren[oldStartIdx]
   const oldE = oldChildren[oldEndIdx]
+
   const newS = newChildren[newStartIdx]
   const newE = newChildren[newEndIdx]
 
-  debugger // 比较：oldStart="${oldS}", oldEnd="${oldE}", newStart="${newS}", newEnd="${newE}"
+  debugger // [Compare] 四指针比较阶段
 
-  // 头-头
+  renderCompare(`
+    oldStart = ${oldS}<br>
+    oldEnd = ${oldE}<br>
+    newStart = ${newS}<br>
+    newEnd = ${newE}
+  `)
+
+  /* =========================
+     1. 头-头
+  ========================= */
+
   if (oldS === newS) {
-    debugger // 头-头匹配！oldStartIdx++，newStartIdx++
-    renderMatchInfo(`头-头匹配: ${oldS} === ${newS}`)
-    ops.push({ type: 'none', msg: `头-头: ${oldS} 不动` })
+
+    debugger // [Hit] 头-头匹配
+
+    ops.push({
+      type: 'none',
+      msg: `头-头匹配：${oldS} 不移动`
+    })
+
     oldStartIdx++
     newStartIdx++
+
     renderCells()
     renderOps()
+
     return true
   }
 
-  // 尾-尾
+  /* =========================
+     2. 尾-尾
+  ========================= */
+
   if (oldE === newE) {
-    debugger // 尾-尾匹配！oldEndIdx--，newEndIdx--
-    renderMatchInfo(`尾-尾匹配: ${oldE} === ${newE}`)
-    ops.push({ type: 'none', msg: `尾-尾: ${oldE} 不动` })
+
+    debugger // [Hit] 尾-尾匹配
+
+    ops.push({
+      type: 'none',
+      msg: `尾-尾匹配：${oldE} 不移动`
+    })
+
     oldEndIdx--
     newEndIdx--
+
     renderCells()
     renderOps()
+
     return true
   }
 
-  // 头-尾
+  /* =========================
+     3. 头-尾
+  ========================= */
+
   if (oldS === newE) {
-    debugger // 头-尾匹配！移动 ${oldS} 到尾部
-    renderMatchInfo(`头-尾匹配: oldStart ${oldS} === newEnd ${newE}`)
-    ops.push({ type: 'move', msg: `移动 ${oldS} 到尾 (头-尾)` })
+
+    debugger // [Move] oldStart → newEnd
+
+    ops.push({
+      type: 'move',
+      msg: `移动 ${oldS} 到尾部`
+    })
+
     oldStartIdx++
     newEndIdx--
+
     renderCells()
     renderOps()
+
     return true
   }
 
-  // 尾-头
+  /* =========================
+     4. 尾-头
+  ========================= */
+
   if (oldE === newS) {
-    debugger // 尾-头匹配！移动 ${oldE} 到头部
-    renderMatchInfo(`尾-头匹配: oldEnd ${oldE} === newStart ${newS}`)
-    ops.push({ type: 'move', msg: `移动 ${oldE} 到头 (尾-头)` })
+
+    debugger // [Move] oldEnd → newStart
+
+    ops.push({
+      type: 'move',
+      msg: `移动 ${oldE} 到头部`
+    })
+
     oldEndIdx--
     newStartIdx++
+
     renderCells()
     renderOps()
+
     return true
   }
 
-  // 查找
-  debugger // 未匹配到端点，在旧 children 中查找 ${newS}
-  const idxInOld = oldChildren.findIndex((item, i) => i >= oldStartIdx && i <= oldEndIdx && item === newS)
+  /* =========================
+     5. 查找复用
+  ========================= */
+
+  debugger // [Lookup] 查找可复用节点
+
+  const idxInOld = oldChildren.findIndex(
+    (item, i) => {
+      return (
+        i >= oldStartIdx &&
+        i <= oldEndIdx &&
+        item === newS
+      )
+    }
+  )
+
   if (idxInOld > -1) {
-    debugger // 在索引 ${idxInOld} 找到 ${newS}
-    renderMatchInfo(`查找: ${newS} 在旧索引 [${idxInOld}]`)
-    ops.push({ type: 'move', msg: `移动 ${newS} 到当前头部` })
+
+    debugger // [Reuse] 找到旧节点
+
+    ops.push({
+      type: 'move',
+      msg: `复用 ${newS}（旧索引 ${idxInOld}）`
+    })
+
   } else {
-    debugger // 未找到！新增 ${newS}
-    renderMatchInfo(`新增: ${newS} 在旧 children 中不存在`)
-    ops.push({ type: 'add', msg: `新增 ${newS}` })
+
+    debugger // [Add] 新节点
+
+    ops.push({
+      type: 'add',
+      msg: `新增节点 ${newS}`
+    })
   }
+
   newStartIdx++
+
   renderCells()
   renderOps()
+
   return true
 }
 
-/* ===== 按钮操作 ===== */
+/* =========================
+   初始化
+========================= */
+
 function setup() {
+
+  debugger // [Init] 初始化Diff状态
+
   document.getElementById('setupBtn').disabled = true
 
   oldStartIdx = 0
   oldEndIdx = oldChildren.length - 1
+
   newStartIdx = 0
   newEndIdx = newChildren.length - 1
+
   ops = []
 
   renderCells()
   renderOps()
-  renderMatchInfo('旧: A B C D  →  新: D A C E B')
+
+  renderCompare(`
+    旧 children：A B C D<br>
+    新 children：D A C E B
+  `)
 
   document.getElementById('stepBtn').disabled = false
   document.getElementById('autoBtn').disabled = false
   document.getElementById('resetBtn').disabled = false
+
   log('Diff 初始化完成')
 }
 
+/* =========================
+   单步执行
+========================= */
+
 function diffStep() {
-  debugger // 执行一步 Diff
-  const cont = patchStep()
-  if (!cont) {
-    log('Diff 完成！')
+
+  debugger // [Step] 手动执行一步
+
+  const ok = patchStep()
+
+  if (ok) {
+    log('执行一步 Diff')
   } else {
-    log('执行了一步 Diff')
+    log('Diff 完成')
   }
 }
 
+/* =========================
+   自动执行
+========================= */
+
 function diffAll() {
-  debugger // 自动执行全部
+
+  debugger // [Auto] 自动执行全部
+
   document.getElementById('stepBtn').disabled = true
   document.getElementById('autoBtn').disabled = true
+
   while (patchStep()) {}
+
   log('全部 Diff 执行完成')
 }
 
+/* =========================
+   重置
+========================= */
+
 function resetDiff() {
+
+  debugger // [Reset] 重置状态
+
+  document.getElementById('setupBtn').disabled = false
+
   setup()
+
   log('已重置')
 }
 
+/* =========================
+   log
+========================= */
+
 function log(msg) {
+
   const area = document.getElementById('logArea')
-  const t = new Date().toLocaleTimeString()
-  area.innerHTML = `[${t}] ${msg}\n` + area.innerHTML
+
+  const time = new Date().toLocaleTimeString()
+
+  area.innerHTML =
+    `[${time}] ${msg}<br>` +
+    area.innerHTML
 }
+
 </script>
+
 </body>
 </html>

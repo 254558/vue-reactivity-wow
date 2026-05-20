@@ -1,326 +1,238 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>手写Vue3计算属性（Debugger版）</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
-      background: #070b09;
-      color: #d0e4da;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 40px 20px;
-    }
-    .box {
-      background: #0d1612;
-      border: 1px solid #1a2e25;
-      border-radius: 12px;
-      padding: 40px 48px;
-      text-align: center;
-      max-width: 560px;
-      width: 100%;
-    }
-    .box h1 {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-      color: #d0e4da;
-    }
-    .box h1 small {
-      display: block;
-      font-size: 0.72rem;
-      font-weight: 400;
-      color: #5e8a76;
-      margin-top: 6px;
-    }
-    .display-area {
-      margin: 24px 0;
-      padding: 20px;
-      background: #0a100d;
-      border: 1px solid #1a2e25;
-      border-radius: 8px;
-    }
-    .display-row {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 16px;
-      margin: 8px 0;
-    }
-    .display-label {
-      font-size: 0.78rem;
-      color: #5e8a76;
-    }
-    .display-val {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.8rem;
-      font-weight: 900;
-    }
-    .display-val.count { color: #f59e0b; }
-    .display-val.computed { color: #10b981; }
-    .display-val.dirty { color: #ef4444; font-size: 1rem; }
-    .display-val.clean { color: #5e8a76; font-size: 1rem; }
-    .display-val.undefined { color: rgba(94, 138, 118, 0.3); font-size: 1rem; }
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin: 20px 0;
-      flex-wrap: wrap;
-    }
-    .btn {
-      padding: 10px 18px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: inherit;
-      transition: all 0.2s;
-      color: white;
-    }
-    .btn-setup { background: linear-gradient(135deg, #6b7280, #9ca3af); }
-    .btn-setup:hover { box-shadow: 0 4px 20px rgba(156, 163, 175, 0.35); transform: translateY(-1px); }
-    .btn-read { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 2px 12px rgba(16, 185, 129, 0.2); }
-    .btn-read:hover { box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35); transform: translateY(-1px); }
-    .btn-modify { background: linear-gradient(135deg, #b91c1c, #ef4444); box-shadow: 0 2px 12px rgba(239, 68, 68, 0.2); }
-    .btn-modify:hover { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35); transform: translateY(-1px); }
-    .btn-cache { background: linear-gradient(135deg, #2563eb, #60a5fa); box-shadow: 0 2px 12px rgba(96, 165, 250, 0.2); }
-    .btn-cache:hover { box-shadow: 0 4px 20px rgba(96, 165, 250, 0.35); transform: translateY(-1px); }
-    .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
-    .tip-box {
-      background: #0a100d;
-      border: 1px solid #1a2e25;
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin-top: 20px;
-      text-align: left;
-      line-height: 1.9;
-    }
-    .tip-box p { font-size: 0.78rem; color: #5e8a76; }
-    .tip-box strong { color: #d0e4da; }
-    kbd {
-      background: rgba(94, 138, 118, 0.15);
-      border: 1px solid #1a2e25;
-      border-radius: 3px;
-      padding: 1px 6px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      color: #10b981;
-    }
-    code { color: #60a5fa; font-family: 'JetBrains Mono', monospace; }
-    .divider {
-      border: none;
-      border-top: 1px solid #1a2e25;
-      margin: 16px 0;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vue3 computed（教学优化Debugger版）</title>
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: system-ui;
+    background:#070b09;
+    color:#d0e4da;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    padding:40px;
+  }
+  .box {
+    width:560px;
+    background:#0d1612;
+    border:1px solid #1a2e25;
+    border-radius:12px;
+    padding:40px;
+    text-align:center;
+  }
+  .display {
+    background:#0a100d;
+    border:1px solid #1a2e25;
+    padding:16px;
+    border-radius:8px;
+    margin:20px 0;
+    font-family:monospace;
+  }
+  .val { font-size:20px; margin:6px 0; }
+  .count { color:#f59e0b; }
+  .computed { color:#10b981; }
+  .dirty { color:#ef4444; }
+
+  button {
+    margin:6px;
+    padding:10px 14px;
+    border:none;
+    border-radius:8px;
+    color:white;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .init { background:#6b7280; }
+  .read { background:#10b981; }
+  .modify { background:#ef4444; }
+
+  button:disabled { opacity:0.4; }
+</style>
 </head>
+
 <body>
-  <div class="box">
-    <h1>
-      Vue 计算属性 Debugger
-      <small>先打开 F12 → 按顺序点击按钮逐步学习</small>
-    </h1>
 
-    <div class="display-area">
-      <div class="display-row">
-        <span class="display-label">state.count</span>
-        <span class="display-val count" id="countVal">0</span>
-      </div>
-      <div class="display-row">
-        <span class="display-label">computed (count × 2)</span>
-        <span class="display-val computed" id="computedVal">未计算</span>
-      </div>
-      <div class="display-row">
-        <span class="display-label">dirty 标志</span>
-        <span class="display-val" id="dirtyVal">—</span>
-      </div>
-      <div class="display-row" style="font-size:0.75rem;color:#5e8a76;font-family:monospace">
-        <span>getter 执行次数：<span id="callCount">0</span></span>
-        <span style="margin:0 8px">|</span>
-        <span>读取次数：<span id="readCount">0</span></span>
-      </div>
-    </div>
+<div class="box">
+  <h3>Vue computed Debugger（优化版）</h3>
 
-    <div class="btn-group">
-      <button class="btn btn-setup" id="setupBtn" onclick="setup()">1. 初始化</button>
-      <button class="btn btn-read" id="readBtn" onclick="readValue()" disabled>2. 读 obj.value</button>
-      <button class="btn btn-cache" id="cacheBtn" onclick="readCached()" disabled>3. 再读（看缓存）</button>
-      <button class="btn btn-modify" id="modifyBtn" onclick="modifyData()" disabled>4. 改 state.count</button>
-      <button class="btn btn-read" id="reReadBtn" onclick="reReadValue()" disabled>5. 再读（重新计算）</button>
-    </div>
-
-    <hr class="divider">
-    <div style="font-size:0.75rem;color:#5e8a76;text-align:left;line-height:1.8;font-family:monospace" id="logArea">
-      点击「初始化」开始
-    </div>
+  <div class="display">
+    <div class="val count">state.count: <span id="count">0</span></div>
+    <div class="val computed">computed: <span id="computed">-</span></div>
+    <div class="val dirty">dirty: <span id="dirty">true</span></div>
+    <div class="val">getter执行次数: <span id="calls">0</span></div>
   </div>
 
+  <button class="init" onclick="init()" id="initBtn">初始化</button>
+  <button class="read" onclick="read1()" id="r1" disabled>读取computed</button>
+  <button class="read" onclick="read2()" id="r2" disabled>再次读取（缓存）</button>
+  <button class="modify" onclick="inc()" id="inc" disabled>修改count</button>
+  <button class="read" onclick="read3()" id="r3" disabled>修改后读取</button>
+</div>
+
 <script>
-/* ===== 响应式基础 ===== */
+
+/* ================= reactive基础 ================= */
+
 let activeEffect = null
 const bucket = new Map()
+let state = null
 
 function effect(fn, options = {}) {
-  const effectFn = () => { activeEffect = effectFn; fn() }
-  effectFn.options = options
-  effectFn()
-  return effectFn
+  const e = () => {
+    debugger // ① effect执行开始
+    activeEffect = e
+    const res = fn()
+    activeEffect = null
+    return res
+  }
+  e.options = options
+  e()
+  return e
 }
 
 function track(target, key) {
   if (!activeEffect) return
-  let depsMap = bucket.get(target)
-  if (!depsMap) { depsMap = new Map(); bucket.set(target, depsMap) }
-  let deps = depsMap.get(key)
-  if (!deps) { deps = new Set(); depsMap.set(key, deps) }
+
+  let map = bucket.get(target)
+  if (!map) { map = new Map(); bucket.set(target, map) }
+
+  let deps = map.get(key)
+  if (!deps) { deps = new Set(); map.set(key, deps) }
+
   deps.add(activeEffect)
 }
 
 function trigger(target, key) {
-  const depsMap = bucket.get(target)
-  if (!depsMap) return
-  const effects = depsMap.get(key)
-  effects && effects.forEach(fn => {
-    if (fn.options.scheduler) { fn.options.scheduler(fn) }
-    else { fn() }
+  const map = bucket.get(target)
+  if (!map) return
+
+  const deps = map.get(key)
+  if (!deps) return
+
+  deps.forEach(fn => {
+
+    debugger // ② trigger发生
+
+    if (fn.options.scheduler) {
+      debugger // ③ computed走scheduler（只标dirty）
+      fn.options.scheduler(fn)
+    } else {
+      fn()
+    }
   })
 }
 
-function reactive(data) {
-  return new Proxy(data, {
-    get(target, key) { track(target, key); return target[key] },
-    set(target, key, val) { target[key] = val; trigger(target, key); return true }
+function reactive(obj) {
+  return new Proxy(obj, {
+    get(t, k) { track(t, k); return t[k] },
+    set(t, k, v) {
+      t[k] = v
+      trigger(t, k)
+      return true
+    }
   })
 }
 
-let state = null
-let computedObj = null
-let _callCount = 0
+/* ================= computed ================= */
 
-/* ===== computed 实现（带 debugger）===== */
 function computed(getter) {
-  debugger // ① 进入 computed：开始创建
 
   let dirty = true
   let value
+  let callCount = 0
 
-  debugger // ② dirty = true, value = undefined
-
-  const effectFn = effect(getter, {
+  const runner = effect(getter, {
     scheduler() {
-      debugger // ⑦ scheduler 执行：依赖变化了！只标记 dirty，不计算
+
+      // ④ 依赖变化 → 不计算，只标记dirty
+      debugger
+
       dirty = true
-      document.getElementById('dirtyVal').innerText = 'dirty = true'
-      document.getElementById('dirtyVal').className = 'display-val dirty'
-      debugger // ⑧ ✓ dirty = true，下次读取时重新计算
+      document.getElementById('dirty').innerText = 'true'
     }
   })
 
-  debugger // ③ effect 已创建，getter 已执行一次（读取响应式数据）
-
-  const obj = {
+  return {
     get value() {
-      debugger // ④/⑨ 读取 obj.value
+
+      debugger // ⑤ 读取 computed
 
       if (dirty) {
-        debugger // ⑤ dirty = true → 需要计算！
-        value = effectFn()
-        _callCount++
-        document.getElementById('callCount').innerText = _callCount
+
+        debugger // ⑥ dirty → 重新计算
+
+        value = runner()
+        callCount++
+
+        document.getElementById('calls').innerText = callCount
+
         dirty = false
-        document.getElementById('dirtyVal').innerText = 'dirty = false'
-        document.getElementById('dirtyVal').className = 'display-val clean'
-        debugger // ⑥ 计算完成 ✓ value = x, dirty = false
+        document.getElementById('dirty').innerText = 'false'
+
+        debugger // ⑦ 计算完成
       } else {
-        debugger // ⑩ dirty = false → 直接返回缓存！
+
+        debugger // ⑧ 命中缓存
       }
 
       return value
     }
   }
-
-  debugger // computed 对象已创建
-  return obj
 }
 
-/* ===== 按钮操作 ===== */
-function setup() {
-  document.getElementById('setupBtn').disabled = true
+/* ================= demo ================= */
+
+let c = null
+
+function init() {
+  document.getElementById('initBtn').disabled = true
 
   state = reactive({ count: 0 })
-  // ↑ 创建响应式数据
 
-  computedObj = computed(() => {
-    debugger // getter 内部：读取 state.count
+  c = computed(() => {
     return state.count * 2
   })
-  // ↑ 创建 computed，effect 已建立（依赖追踪已收集），但尚未计算最终值
 
-  document.getElementById('readBtn').disabled = false
-  document.getElementById('cacheBtn').disabled = false
-  document.getElementById('modifyBtn').disabled = false
-  document.getElementById('reReadBtn').disabled = false
-
-  document.getElementById('dirtyVal').innerText = 'dirty = true'
-  document.getElementById('dirtyVal').className = 'display-val dirty'
-
-  updateDisplay()
-  log('初始化完成')
+  document.getElementById('r1').disabled = false
+  document.getElementById('r2').disabled = false
+  document.getElementById('inc').disabled = false
+  document.getElementById('r3').disabled = false
 }
 
-function readValue() {
-  debugger // 用户操作：第一次读取 obj.value
-  const v = computedObj.value
-  debugger // 计算并缓存：computed = x
-  updateDisplay(v)
-  log(`读取 obj.value → ${v}（计算了一次）`)
+function render() {
+  document.getElementById('count').innerText = state.count
+  document.getElementById('computed').innerText = c.value ?? '-'
 }
 
-function readCached() {
-  debugger // 用户操作：再次读取（应该命中的缓存）
-  const v = computedObj.value
-  debugger // 直接返回缓存值，getter 没有执行
-  updateDisplay(v)
-  log(`再次读取 obj.value → ${v}（命中缓存，getter 未执行）`)
+function read1() {
+  debugger
+  const v = c.value
+  render()
 }
 
-function modifyData() {
-  debugger // 用户操作：修改 state.count
+function read2() {
+  debugger
+  const v = c.value
+  render()
+}
+
+function inc() {
+  debugger
   state.count++
-  debugger // count 已变化，scheduler 执行后 dirty = true
-  updateDisplay()
-  log(`state.count → ${state.count}（dirty = true）`)
+  render()
 }
 
-function reReadValue() {
-  debugger // 用户操作：修改后再次读取（重新计算）
-  const v = computedObj.value
-  debugger // 重新计算了！computed = x
-  updateDisplay(v)
-  log(`重新读取 obj.value → ${v}（重新计算！）`)
+function read3() {
+  debugger
+  const v = c.value
+  render()
 }
 
-function updateDisplay(computedValue) {
-  if (!state) return
-  document.getElementById('countVal').innerText = state.count
-  if (computedValue !== undefined) {
-    document.getElementById('computedVal').innerText = computedValue
-  }
-}
-
-function log(msg) {
-  const area = document.getElementById('logArea')
-  const t = new Date().toLocaleTimeString()
-  area.innerHTML = `[${t}] ${msg}\n` + area.innerHTML
-}
 </script>
 </body>
 </html>

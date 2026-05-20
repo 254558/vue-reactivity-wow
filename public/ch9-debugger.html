@@ -234,14 +234,17 @@ let ast = null
 
 /* ===== Parse ===== */
 function parse(templateStr) {
-  debugger // ① parse：解析模板字符串
+  debugger // ① 进入 parse：开始解析 template 字符串
 
+  // 创建 AST 根节点
   const ast = {
     type: 'Root',
     children: []
   }
 
-  debugger // 解析根元素
+  debugger // ② Root 节点已创建
+
+  // 解析 <div id="app">
   const root = {
     type: 'Element',
     tag: 'div',
@@ -249,9 +252,15 @@ function parse(templateStr) {
     children: [],
     isStatic: true
   }
+
+  debugger // ③ div Element 节点已创建
+
+  // 放入 Root.children
   ast.children.push(root)
 
-  debugger // 解析子元素
+  debugger // ④ div 已挂到 Root.children
+
+  // 解析 <p>
   const pElem = {
     type: 'Element',
     tag: 'p',
@@ -260,133 +269,257 @@ function parse(templateStr) {
     isStatic: false
   }
 
-  debugger // 解析文本子节点
-  pElem.children.push({
+  debugger // ⑤ p Element 节点已创建
+
+  // 解析普通文本 hello
+  const textNode = {
     type: 'Text',
     content: 'hello ',
     isStatic: true
-  })
+  }
 
-  debugger // 解析插值表达式
-  pElem.children.push({
+  debugger // ⑥ Text 节点已创建
+
+  // 放入 p.children
+  pElem.children.push(textNode)
+
+  debugger // ⑦ Text 已加入 p.children
+
+  // 解析 {{ name }}
+  const interpolationNode = {
     type: 'Interpolation',
-    content: { type: 'Expression', content: 'name' },
+    content: {
+      type: 'Expression',
+      content: 'name'
+    },
     isStatic: false
-  })
+  }
 
+  debugger // ⑧ Interpolation 节点已创建
+
+  // 放入 p.children
+  pElem.children.push(interpolationNode)
+
+  debugger // ⑨ Interpolation 已加入 p.children
+
+  // p 放入 div.children
   root.children.push(pElem)
 
-  debugger // AST 构建完成
+  debugger // ⑩ p 已加入 div.children
+
+  debugger // ⑪ AST 构建完成
+
   return ast
 }
 
 /* ===== Transform ===== */
 function transform(ast) {
-  debugger // ④ transform：遍历 AST，标记优化信息
+  debugger // ① 进入 transform：开始遍历 AST
 
   function traverseNode(node) {
-    debugger // 访问节点：${node.type || node.tag}
+    debugger // ② 正在访问节点
+
+    // Root / Element 才有 children
     if (node.children) {
-      node.children.forEach(child => traverseNode(child))
+      node.children.forEach(child => {
+        debugger // ③ 准备递归进入子节点
+        traverseNode(child)
+      })
     }
-    debugger // 返回上一层
+
+    // 模拟 Vue 编译优化
+    if (node.type === 'Text') {
+      debugger // ④ Text 节点：标记静态提升
+      node.hoist = true
+    }
+
+    if (node.type === 'Interpolation') {
+      debugger // ⑤ Interpolation：标记为动态节点
+      node.patchFlag = 'TEXT'
+    }
+
+    if (node.type === 'Element') {
+      debugger // ⑥ Element：分析是否静态
+      node.patchFlag = node.isStatic ? 'STATIC' : 'DYNAMIC'
+    }
+
+    debugger // ⑦ 当前节点处理完成，准备返回上一层
   }
 
   traverseNode(ast)
-  debugger // 优化标记完成（如静态提升、patchFlag）
+
+  debugger // ⑧ transform 全部完成
+
   return ast
 }
 
 /* ===== Codegen ===== */
 function codegen(ast) {
-  debugger // ⑥ codegen：根据 AST 生成渲染函数代码
+  debugger // ① 进入 codegen：开始根据 AST 生成 render 函数
 
-  let code = `function render() {\n  return h('div', { id: "app" }, [\n    h('p', null, [\n      "hello ",\n      _ctx.name\n    ])\n  ])\n}`
+  // 模拟 Vue 生成 render 代码
+  let code = `
+function render() {
+  return h('div', { id: "app" }, [
+    h('p', null, [
+      "hello ",
+      _ctx.name
+    ])
+  ])
+}
+`.trim()
 
-  debugger // codegen 完成：生成渲染函数
+  debugger // ② render 函数代码字符串已生成
+
   return code
 }
 
 /* ===== 阶段更新 ===== */
 function setStage(stage, state) {
   const el = document.getElementById('stage-' + stage)
-  if (state === 'active') el.className = 'stage active'
-  else if (state === 'processing') el.className = 'stage processing'
-  else el.className = 'stage'
+
+  if (state === 'active') {
+    el.className = 'stage active'
+  } else if (state === 'processing') {
+    el.className = 'stage processing'
+  } else {
+    el.className = 'stage'
+  }
 }
 
 /* ===== 按钮操作 ===== */
 function setup() {
+  debugger // ① 初始化页面
+
   document.getElementById('setupBtn').disabled = true
 
   setStage('template', 'active')
-  document.getElementById('codeBox').innerHTML = `<span class="muted">模板:</span> ${template.replace(/</g, '&lt;')}`
+
+  debugger // ② template 已准备显示
+
+  document.getElementById('codeBox').innerHTML =
+    `<span class="muted">模板:</span> ${template.replace(/</g, '&lt;')}`
 
   document.getElementById('parseBtn').disabled = false
+
+  debugger // ③ Parse 按钮已解锁
+
   log('初始化完成，模板已就绪')
 }
 
 function doParse() {
-  debugger // 开始解析
+  debugger // ① 点击 Parse：开始 parse 阶段
+
   document.getElementById('parseBtn').disabled = true
 
   setStage('parse', 'processing')
   document.getElementById('arrow-parse').className = 'pipe-arrow active'
 
+  debugger // ② parse 阶段 UI 已高亮
+
   ast = parse(template)
 
+  debugger // ③ parse() 已返回 AST
+
   setStage('parse', 'active')
-  document.getElementById('codeBox').innerHTML = `<span class="key">AST:</span>
+
+  document.getElementById('codeBox').innerHTML =
+`<span class="key">AST:</span>
 <span class="muted">Root</span>
   <span class="kw">Element</span> <span class="str">div</span>
     <span class="key">props</span>: { id: <span class="str">"app"</span> }
     <span class="kw">Element</span> <span class="str">p</span>
       <span class="muted">Text</span> <span class="str">"hello "</span>
-      <span class="muted">Interpolation</span> { <span class="key">content</span>: <span class="fn">name</span> }`
+      <span class="muted">Interpolation</span> {
+        <span class="key">content</span>: <span class="fn">name</span>
+      }`
+
+  debugger // ④ AST 已渲染到页面
 
   document.getElementById('transformBtn').disabled = false
+
+  debugger // ⑤ Transform 按钮已解锁
+
   log('Parse 完成 → AST 已构建')
 }
 
 function doTransform() {
-  debugger // 开始转换
+  debugger // ① 点击 Transform：开始 AST 优化
+
   document.getElementById('transformBtn').disabled = true
 
   setStage('transform', 'processing')
   document.getElementById('arrow-transform').className = 'pipe-arrow active'
 
+  debugger // ② transform 阶段 UI 已高亮
+
   transform(ast)
 
+  debugger // ③ transform() 执行完成
+
   setStage('transform', 'active')
-  document.getElementById('codeBox').innerHTML = `<span class="key">Transformed AST</span>
-<span class="muted">（静态节点已标记，patch 类型已优化）</span>
-<span class="muted">div</span> <span class="muted">→ patchFlag: STATIC</span>
-  <span class="muted">p</span> <span class="muted">→ patchFlag: DYNAMIC (含插值)</span>
-    <span class="muted">Text "hello "</span> <span class="muted">→ 静态提升</span>
-    <span class="muted">Interpolation name</span> <span class="muted">→ 动态绑定</span>`
+
+  document.getElementById('codeBox').innerHTML =
+`<span class="key">Transformed AST</span>
+
+<span class="muted">Root</span>
+
+<span class="muted">div</span>
+  → patchFlag: STATIC
+
+  <span class="muted">p</span>
+    → patchFlag: DYNAMIC
+
+    <span class="muted">Text "hello "</span>
+      → hoistStatic
+
+    <span class="muted">Interpolation name</span>
+      → patchFlag: TEXT`
+
+  debugger // ④ 优化信息已显示
 
   document.getElementById('codegenBtn').disabled = false
+
+  debugger // ⑤ Codegen 按钮已解锁
+
   log('Transform 完成 → 节点已优化')
 }
 
 function doCodegen() {
-  debugger // 开始生成渲染函数
+  debugger // ① 点击 Codegen：开始生成 render 函数
+
   document.getElementById('codegenBtn').disabled = true
 
   setStage('codegen', 'processing')
   document.getElementById('arrow-codegen').className = 'pipe-arrow active'
 
+  debugger // ② codegen 阶段 UI 已高亮
+
   const code = codegen(ast)
 
+  debugger // ③ render 函数代码已生成
+
   setStage('codegen', 'active')
-  document.getElementById('codeBox').innerHTML = `<span class="kw">function</span> <span class="fn">render</span>() {
-  <span class="kw">return</span> <span class="fn">h</span>(<span class="str">'div'</span>, { <span class="key">id</span>: <span class="str">"app"</span> }, [
-    <span class="fn">h</span>(<span class="str">'p'</span>, <span class="kw">null</span>, [
-      <span class="str">"hello "</span>,
-      <span class="muted">_ctx</span>.name
-    ])
-  ])
+
+  document.getElementById('codeBox').innerHTML =
+`<span class="kw">function</span> <span class="fn">render</span>() {
+  <span class="kw">return</span> <span class="fn">h</span>(
+    <span class="str">'div'</span>,
+    { <span class="key">id</span>: <span class="str">"app"</span> },
+    [
+      <span class="fn">h</span>(
+        <span class="str">'p'</span>,
+        <span class="kw">null</span>,
+        [
+          <span class="str">"hello "</span>,
+          <span class="muted">_ctx</span>.name
+        ]
+      )
+    ]
+  )
 }`
+
+  debugger // ④ render 函数已显示到页面
 
   log('Codegen 完成 → 渲染函数已生成！')
 }
@@ -394,6 +527,7 @@ function doCodegen() {
 function log(msg) {
   const area = document.getElementById('logArea')
   const t = new Date().toLocaleTimeString()
+
   area.innerHTML = `[${t}] ${msg}\n` + area.innerHTML
 }
 </script>
