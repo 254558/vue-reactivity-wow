@@ -29,7 +29,7 @@
     <div class="viz-card">
       <div class="viz-head"><i class="fa-solid fa-diagram-project"></i><h4>组件树与实例</h4></div>
       <div class="comp-tree">
-        <div class="comp-node parent" :class="{ updating: store.isUpdating }">
+        <div class="comp-node parent" :class="{ updating: store.isParentUpdating }">
           <div class="comp-header">
             <div class="comp-icon parent-icon"><i class="fa-solid fa-cube"></i></div>
             <span class="comp-name">ParentComponent</span>
@@ -42,12 +42,12 @@
         </div>
         <div class="tree-connector">
           <div class="connector-line"></div>
-          <div class="connector-props" :class="{ flowing: store.isUpdating }">
+          <div class="connector-props" :class="{ flowing: store.isParentUpdating }">
             <i class="fa-solid fa-arrow-down"></i> props: { title: "{{ store.childPropTitle }}" }
           </div>
           <div class="connector-line"></div>
         </div>
-        <div class="comp-node child" :class="{ mounted: store.isMounted, updating: store.isUpdating }">
+        <div class="comp-node child" :class="{ mounted: store.isMounted, updating: store.isParentUpdating || store.isChildUpdating, selfUpdate: store.isChildUpdating }">
           <div class="comp-header">
             <div class="comp-icon child-icon"><i class="fa-solid fa-cube"></i></div>
             <span class="comp-name">ChildComponent</span>
@@ -66,7 +66,7 @@
           <button
             class="child-btn"
             @click="store.simulateChildUpdate()"
-            :disabled="!store.canInteract || store.isUpdating || !store.isMounted">
+            :disabled="!store.canUpdate || store.isChildUpdating || !store.isMounted">
             <i class="fa-solid fa-rotate"></i> 触发子组件内部更新
           </button>
         </div>
@@ -78,7 +78,7 @@
         <button class="act-btn mount-btn" @click="store.simulateMount()" :disabled="!store.canMount || store.isMounted">
           <i class="fa-solid fa-play"></i> 挂载组件
         </button>
-        <button class="act-btn update-btn" @click="store.simulateParentUpdate()" :disabled="!store.canInteract || store.isUpdating || !store.isMounted">
+        <button class="act-btn update-btn" @click="store.simulateParentUpdate()" :disabled="!store.canUpdate || store.isParentUpdating || !store.isMounted">
           <i class="fa-solid fa-pen"></i> 父组件更新
         </button>
       </div>
@@ -135,6 +135,7 @@ onUnmounted(() => {
 .comp-node.child { border-color: rgba(96,165,250,0.3); }
 .comp-node.child.mounted { border-color: rgba(16,185,129,0.4); }
 .comp-node.child.updating { border-color: rgba(139,92,246,0.6); box-shadow: 0 0 16px rgba(139,92,246,0.15); }
+.comp-node.child.selfUpdate { border-color: rgba(245,158,11,0.6); box-shadow: 0 0 16px rgba(245,158,11,0.15); }
 .comp-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
 .comp-icon { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
 .parent-icon { background: rgba(245,158,11,0.15); color: #f59e0b; }

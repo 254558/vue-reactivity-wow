@@ -22,12 +22,13 @@
             <div v-for="(node, i) in store.oldChildren" :key="'old'+i"
               class="node-cell"
               :class="{
-                active: i >= store.oldStartIdx && i <= store.oldEndIdx,
+                active: node !== undefined && i >= store.oldStartIdx && i <= store.oldEndIdx,
                 start: i === store.oldStartIdx,
                 end: i === store.oldEndIdx,
-                removed: i < store.oldStartIdx || i > store.oldEndIdx
+                removed: i < store.oldStartIdx || i > store.oldEndIdx || node === undefined,
+                processed: node === undefined
               }">
-              <span class="cell-key">{{ node }}</span>
+              <span class="cell-key">{{ node === undefined ? '—' : node }}</span>
               <span class="cell-idx" v-if="i === store.oldStartIdx && i === store.oldEndIdx">S/E</span>
               <span class="cell-idx" v-else-if="i === store.oldStartIdx">S</span>
               <span class="cell-idx" v-else-if="i === store.oldEndIdx">E</span>
@@ -87,25 +88,25 @@
         <div class="lis-row">
           <span class="lis-label">新节点</span>
           <div class="lis-cells">
-            <span v-for="n in ['B','A','C','D']" :key="n" class="lis-cell">{{ n }}</span>
+            <span v-for="n in ['D','A','C','E','B']" :key="n" class="lis-cell" :class="{ new: n === 'E' }">{{ n }}</span>
           </div>
         </div>
         <div class="lis-row">
           <span class="lis-label">旧索引</span>
           <div class="lis-cells">
-            <span v-for="(n, i) in [1,0,2,3]" :key="i" class="lis-cell" :class="{ inlis: [0,2,3].includes(n) }">{{ n }}</span>
+            <span v-for="(n, i) in [3,0,2,'-',1]" :key="i" class="lis-cell" :class="{ inlis: [0,2].includes(n), new: n === '-' }">{{ n }}</span>
           </div>
         </div>
         <div class="lis-row result">
           <span class="lis-label">LIS</span>
           <div class="lis-cells">
             <span class="lis-cell ghost"></span>
-            <span v-for="n in [0,2,3]" :key="n" class="lis-cell highlight">{{ n }}</span>
+            <span v-for="n in [0,2]" :key="n" class="lis-cell highlight">{{ n }}</span>
           </div>
         </div>
         <div class="lis-conclusion">
           <i class="fa-solid fa-lightbulb"></i>
-          索引 0, 2, 3 (对应 A, C, D) 保持不动，只需移动 B
+          索引 0, 2 (对应 A, C) 保持不动，只需移动 D、B，新增 E
         </div>
       </div>
     </div>
@@ -159,6 +160,7 @@ const matchType = computed(() => {
 .node-cell.start { border-color: rgba(96,165,250,0.6); background: rgba(96,165,250,0.06); }
 .node-cell.end { border-color: rgba(245,158,11,0.6); background: rgba(245,158,11,0.06); }
 .node-cell.removed { opacity: 0.25; }
+.node-cell.processed .cell-key { text-decoration: line-through; color: var(--muted); }
 .cell-key { font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700; color: var(--fg); }
 .cell-idx { font-family: var(--font-mono); font-size: 0.5rem; color: var(--muted); position: absolute; top: 2px; right: 4px; }
 .connect-area { display: flex; align-items: center; justify-content: center; padding: 4px 0; position: relative; }
@@ -201,6 +203,7 @@ const matchType = computed(() => {
 }
 .lis-cell.inlis { border-color: rgba(16,185,129,0.4); color: var(--accent); }
 .lis-cell.highlight { border-color: rgba(139,92,246,0.5); background: rgba(139,92,246,0.08); color: #8b5cf6; }
+.lis-cell.new { border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.06); color: var(--crimson); }
 .lis-cell.ghost { border-color: transparent; background: transparent; }
 .lis-conclusion {
   margin-top: 6px; background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.2);

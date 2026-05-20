@@ -11,10 +11,33 @@
     @next="store.nextStep()"
     @goTo="store.goToStep($event)"
   >
-    <!-- 组件树映射 -->
+    <!-- 组件树映射 / 变量覆盖问题 -->
     <div class="viz-card">
-      <div class="viz-head"><i class="fa-solid fa-sitemap"></i><h4>组件树与 Effect</h4></div>
-      <div class="component-tree">
+      <div class="viz-head"><i class="fa-solid fa-sitemap"></i><h4>{{ store.currentStep === 2 ? '变量覆盖问题' : '组件树与 Effect' }}</h4></div>
+      <!-- 步骤2：展示变量覆盖问题 -->
+      <div v-if="store.currentStep === 2" class="problem-demo">
+        <div class="problem-step" :class="{ done: store.problemPhase >= 1 }">
+          <span class="p-label">1.</span>
+          <span class="p-code">activeEffect = <span class="p-val amber">effect1</span></span>
+          <span class="p-note">外层 effect 开始执行</span>
+        </div>
+        <div class="problem-step" :class="{ done: store.problemPhase >= 2 }">
+          <span class="p-label">2.</span>
+          <span class="p-code">activeEffect = <span class="p-val blue">effect2</span></span>
+          <span class="p-note warning">内层 effect 覆盖了外层！</span>
+        </div>
+        <div class="problem-step" :class="{ done: store.problemPhase >= 3 }">
+          <span class="p-label">3.</span>
+          <span class="p-code">外层继续读取数据</span>
+          <span class="p-note error">track() 收集到的是 effect2 ！</span>
+        </div>
+        <div class="problem-result">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          外层的依赖被错误地收集为内层 effect
+        </div>
+      </div>
+      <!-- 其他步骤：组件树 -->
+      <div v-else class="component-tree">
         <div class="comp-node father" :class="{ active: store.currentStep >= 1 }">
           <div class="comp-dot"></div>
           <span class="comp-name">Father Component</span>
@@ -78,7 +101,7 @@
           </Transition>
         </div>
         <div class="verify-effect">
-          <div class="ve-item" :class="{ hit: store.isTriggering }">
+          <div class="ve-item" :class="{ skip: store.isTriggering }">
             <span class="ve-name">effect1 (父)</span>
             <span class="ve-status" :class="store.isTriggering ? 'miss' : 'idle'">不触发</span>
           </div>
@@ -113,7 +136,7 @@
 </template>
 
 <script setup>
-import { computed, onUnmounted } from 'vue'
+import { onUnmounted } from 'vue'
 import { useChapter6Store } from '@/stores/chapter6'
 import { sourceCode } from './data'
 import DemoLayout from '@/components/DemoLayout.vue'
@@ -125,6 +148,29 @@ onUnmounted(() => { store.reset() })
 <style scoped>
 /* viz-card 章节特有变体 */
 .viz-card.verified { border-color: rgba(16,185,129,0.4); box-shadow: 0 0 20px rgba(16,185,129,0.08); }
+/* 变量覆盖问题演示 */
+.problem-demo { display: flex; flex-direction: column; gap: 8px; }
+.problem-step {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  background: rgba(7,11,9,0.4); border: 1px solid var(--border); border-radius: 6px;
+  opacity: 0.35; transition: all 0.4s;
+}
+.problem-step.done { opacity: 1; }
+.problem-step.done:nth-child(2) { border-color: rgba(239,68,68,0.5); background: rgba(239,68,68,0.06); }
+.problem-step.done:nth-child(3) { border-color: rgba(245,158,11,0.5); background: rgba(245,158,11,0.06); }
+.p-label { font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); }
+.p-code { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600; color: var(--fg); }
+.p-val.amber { color: #f59e0b; }
+.p-val.blue { color: #60a5fa; }
+.p-note { font-size: 0.6rem; color: var(--muted); margin-left: auto; }
+.p-note.warning { color: #ef4444; font-weight: 600; }
+.p-note.error { color: #f59e0b; font-weight: 600; }
+.problem-result {
+  margin-top: 4px; padding: 8px 10px; border-radius: 6px;
+  background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3);
+  font-size: 0.68rem; color: var(--crimson); display: flex; align-items: center; gap: 6px;
+}
+.problem-result i { font-size: 0.72rem; }
 /* 组件树 */
 .component-tree { display: flex; flex-direction: column; align-items: center; gap: 0; }
 .comp-node { display: flex; align-items: center; gap: 8px; background: rgba(7,11,9,0.6); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 16px; width: 100%; transition: all 0.3s; opacity: 0.4; }
@@ -174,7 +220,7 @@ onUnmounted(() => { store.reset() })
   display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.3s;
 }
 .ve-item.hit { border-color: rgba(16,185,129,0.5); }
-.ve-item:first-child.hit { border-color: rgba(94,138,118,0.3); }
+.ve-item.skip { border-color: rgba(94,138,118,0.2); opacity: 0.6; }
 .ve-name { font-size: 0.62rem; color: var(--muted); }
 .ve-status { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; }
 .ve-status.idle { color: rgba(94,138,118,0.4); }

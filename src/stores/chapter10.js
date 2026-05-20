@@ -11,11 +11,13 @@ export const useChapter10Store = defineStore('chapter10', () => {
   const childCount = ref(0)
   const childPropTitle = ref('Initial Title')
   const isMounted = ref(false)
-  const isUpdating = ref(false)
+  const isParentUpdating = ref(false)
+  const isChildUpdating = ref(false)
 
   const hasLogs = computed(() => base.triggerLogs.value.length > 0)
   // 核心交互权限控制
   const canMount = computed(() => base.currentStep.value >= 4)
+  const canUpdate = computed(() => base.currentStep.value >= 5)
 
   function simulateMount() {
     if (isMounted.value || !canMount.value) return
@@ -24,25 +26,25 @@ export const useChapter10Store = defineStore('chapter10', () => {
   }
 
   function simulateParentUpdate() {
-    if (!base.canInteract.value || isUpdating.value || !isMounted.value) return
-    isUpdating.value = true
+    if (!canUpdate.value || isParentUpdating.value || !isMounted.value) return
+    isParentUpdating.value = true
     parentCount.value++
     childPropTitle.value = `Title ${parentCount.value}`
     logAction('patch', `父组件更新，传递新 props: { title: "${childPropTitle.value}" }`)
     setTimeout(() => {
       logAction('diff', '重新执行 render，对比新旧 subTree，更新 DOM')
-      isUpdating.value = false
+      isParentUpdating.value = false
     }, 600)
   }
 
   function simulateChildUpdate() {
-    if (!base.canInteract.value || isUpdating.value || !isMounted.value) return
-    isUpdating.value = true
+    if (!canUpdate.value || isChildUpdating.value || !isMounted.value) return
+    isChildUpdating.value = true
     childCount.value++
     logAction('self', `子组件内部更新，setupState.count 变为 ${childCount.value}`)
     setTimeout(() => {
       logAction('diff', '重新执行 render，对比新旧 subTree，更新 DOM')
-      isUpdating.value = false
+      isChildUpdating.value = false
     }, 600)
   }
 
@@ -72,13 +74,14 @@ export const useChapter10Store = defineStore('chapter10', () => {
     childCount.value = 0
     childPropTitle.value = 'Initial Title'
     isMounted.value = false
-    isUpdating.value = false
+    isParentUpdating.value = false
+    isChildUpdating.value = false
   }
 
   return {
     ...base,
-    parentCount, childCount, childPropTitle, isMounted, isUpdating,
-    hasLogs, canMount,
+    parentCount, childCount, childPropTitle, isMounted, isParentUpdating, isChildUpdating,
+    hasLogs, canMount, canUpdate,
     simulateMount, simulateParentUpdate, simulateChildUpdate, logAction, reset
   }
 })

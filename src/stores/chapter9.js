@@ -10,6 +10,7 @@ export const useChapter9Store = defineStore('chapter9', () => {
   const templateSource = ref('<div>hello {{ name }}</div>')
   const currentPhase = ref('idle') // 'idle', 'parse', 'transform', 'codegen'
   const isCompiling = ref(false)
+  const compileComplete = ref(false)
 
   // 模拟完整编译流水线
   function simulateCompile() {
@@ -22,6 +23,7 @@ export const useChapter9Store = defineStore('chapter9', () => {
       if (i >= phases.length) {
         isCompiling.value = false
         currentPhase.value = 'idle'
+        compileComplete.value = true
         base.logAction('完成', '渲染函数代码生成完毕')
         return
       }
@@ -42,11 +44,12 @@ export const useChapter9Store = defineStore('chapter9', () => {
     base.resetBase()
     currentPhase.value = 'idle'
     isCompiling.value = false
+    compileComplete.value = false
   }
 
   return {
     ...base,
-    templateSource, currentPhase, isCompiling,
+    templateSource, currentPhase, isCompiling, compileComplete,
     simulateCompile, reset
   }
 })

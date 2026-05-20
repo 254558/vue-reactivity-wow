@@ -10,13 +10,13 @@ export const useChapter3Store = defineStore('chapter3', () => {
   const reactiveCount = ref(1)
   const dirty = ref(true)
   const cachedValue = ref(undefined)
-  const getterCallCount = ref(0)
+  const getterCallCount = ref(1)
   const readCount = ref(0)
   const isComputing = ref(false)
 
   // computed 模拟值
   const computedDisplay = computed(() => {
-    if (cachedValue.value === undefined) return 'undefined'
+    if (cachedValue.value === undefined) return '尚未计算'
     return cachedValue.value
   })
 
@@ -59,7 +59,7 @@ export const useChapter3Store = defineStore('chapter3', () => {
     reactiveCount.value = 1
     dirty.value = true
     cachedValue.value = undefined
-    getterCallCount.value = 0
+    getterCallCount.value = 1
     readCount.value = 0
     isComputing.value = false
   }

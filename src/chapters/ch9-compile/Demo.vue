@@ -21,6 +21,7 @@
           <div class="stage-info">
             <span class="stage-label">Template</span>
             <span class="stage-desc">模板字符串</span>
+            <div v-if="store.currentStep >= 1" class="template-src">{{ store.templateSource }}</div>
           </div>
         </div>
         <div class="pipe-arrow" :class="{ flow: store.currentPhase === 'parse' }"><i class="fa-solid fa-arrow-down"></i></div>
@@ -86,7 +87,7 @@
       </div>
     </div>
     <!-- 渲染函数产物 -->
-    <div class="viz-card" :class="{ active: store.currentStep >= 6 }">
+    <div class="viz-card" v-if="store.compileComplete" :class="{ active: true }">
       <div class="viz-head"><i class="fa-solid fa-wand-magic-sparkles"></i><h4>生成产物：Render Function</h4></div>
       <div class="render-result">
         <pre><code><span class="ck-kw">function</span> <span class="ck-fn">render</span>() {
@@ -154,6 +155,7 @@ function getLogClass(type) {
 .stage-info { display: flex; flex-direction: column; gap: 2px; }
 .stage-label { font-weight: 700; font-size: 0.82rem; }
 .stage-desc { font-size: 0.62rem; color: var(--muted); }
+.template-src { font-family: var(--font-mono); font-size: 0.6rem; color: var(--amber); background: rgba(245,158,11,0.08); padding: 2px 6px; border-radius: 3px; margin-top: 2px; }
 .pipe-arrow { color: rgba(94,138,118,0.2); padding: 4px 0; transition: all 0.3s; }
 .pipe-arrow.flow { color: var(--accent); animation: flow-down 0.6s ease infinite; }
 @keyframes flow-down { 0%,100%{transform:translateY(0)}50%{transform:translateY(2px)} }

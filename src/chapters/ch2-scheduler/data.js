@@ -90,7 +90,7 @@ export const steps = [
     detail: 'state.count++ → 执行 effectFn (渲染)\nstate.count++ → 执行 effectFn (渲染)\nstate.count++ → 执行 effectFn (渲染)\n\n结果：渲染了 3 次，但用户只需看到最终结果 3',
     color: '#ef4444',
     lines: [51, 52, 53, 54, 55, 56],
-    highlight: { scheduler: false, trigger: false, queue: false },
+    highlight: { scheduler: false, trigger: true, queue: false },
   },
   {
     id: 2,

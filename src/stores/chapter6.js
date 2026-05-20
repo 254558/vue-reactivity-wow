@@ -13,6 +13,9 @@ export const useChapter6Store = defineStore('chapter6', () => {
   const isPopping = ref(false)
   const isTriggering = ref(false)
 
+  // 步骤2：变量覆盖问题动画
+  const problemPhase = ref(0)
+
   // 栈状态模拟
   const effectStack = ref([])
   const activeEffectName = computed(() => {
@@ -21,7 +24,16 @@ export const useChapter6Store = defineStore('chapter6', () => {
 
   function nextStep() {
     base.nextStep()
+    if (base.currentStep.value === 2) simulateProblem()
     if (base.currentStep.value === 3) simulateInitialRender()
+  }
+
+  // 模拟变量覆盖问题
+  function simulateProblem() {
+    problemPhase.value = 0
+    setTimeout(() => { problemPhase.value = 1 }, 300)
+    setTimeout(() => { problemPhase.value = 2 }, 900)
+    setTimeout(() => { problemPhase.value = 3 }, 1500)
   }
 
   // 模拟初始渲染的入栈出栈
@@ -72,13 +84,14 @@ export const useChapter6Store = defineStore('chapter6', () => {
     isPushing.value = false
     isPopping.value = false
     isTriggering.value = false
+    problemPhase.value = 0
     effectStack.value = []
   }
 
   return {
     ...base,
     showFlag, textVal, effectStack, activeEffectName,
-    isPushing, isPopping, isTriggering,
+    isPushing, isPopping, isTriggering, problemPhase,
     nextStep, simulateInitialRender, simulateChangeText, reset
   }
 })
