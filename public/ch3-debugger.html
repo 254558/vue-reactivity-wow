@@ -218,6 +218,8 @@ function computed(getter) {
     scheduler() {
       debugger // ⑦ scheduler 执行：依赖变化了！只标记 dirty，不计算
       dirty = true
+      document.getElementById('dirtyVal').innerText = 'dirty = true'
+      document.getElementById('dirtyVal').className = 'display-val dirty'
       debugger // ⑧ ✓ dirty = true，下次读取时重新计算
     }
   })
@@ -234,6 +236,8 @@ function computed(getter) {
         _callCount++
         document.getElementById('callCount').innerText = _callCount
         dirty = false
+        document.getElementById('dirtyVal').innerText = 'dirty = false'
+        document.getElementById('dirtyVal').className = 'display-val clean'
         debugger // ⑥ 计算完成 ✓ value = x, dirty = false
       } else {
         debugger // ⑩ dirty = false → 直接返回缓存！
@@ -258,14 +262,15 @@ function setup() {
     debugger // getter 内部：读取 state.count
     return state.count * 2
   })
-
-  computedObj.value  // 首次读取触发计算
-  // ↑ 触发 getter → value = 0 * 2 = 0
+  // ↑ 创建 computed，effect 已建立（依赖追踪已收集），但尚未计算最终值
 
   document.getElementById('readBtn').disabled = false
   document.getElementById('cacheBtn').disabled = false
   document.getElementById('modifyBtn').disabled = false
   document.getElementById('reReadBtn').disabled = false
+
+  document.getElementById('dirtyVal').innerText = 'dirty = true'
+  document.getElementById('dirtyVal').className = 'display-val dirty'
 
   updateDisplay()
   log('初始化完成')
@@ -275,7 +280,7 @@ function readValue() {
   debugger // 用户操作：第一次读取 obj.value
   const v = computedObj.value
   debugger // 计算并缓存：computed = x
-  updateDisplay()
+  updateDisplay(v)
   log(`读取 obj.value → ${v}（计算了一次）`)
 }
 
@@ -283,7 +288,7 @@ function readCached() {
   debugger // 用户操作：再次读取（应该命中的缓存）
   const v = computedObj.value
   debugger // 直接返回缓存值，getter 没有执行
-  updateDisplay()
+  updateDisplay(v)
   log(`再次读取 obj.value → ${v}（命中缓存，getter 未执行）`)
 }
 
@@ -299,18 +304,15 @@ function reReadValue() {
   debugger // 用户操作：修改后再次读取（重新计算）
   const v = computedObj.value
   debugger // 重新计算了！computed = x
-  updateDisplay()
+  updateDisplay(v)
   log(`重新读取 obj.value → ${v}（重新计算！）`)
 }
 
-function updateDisplay() {
+function updateDisplay(computedValue) {
   if (!state) return
   document.getElementById('countVal').innerText = state.count
-
-  if (computedObj) {
-    // 安全获取 computedObj.value，避免触发额外读取
-    const hasGet = Object.getOwnPropertyDescriptor(computedObj, 'value')?.get
-    document.getElementById('computedVal').innerText = '(显示需读取)'
+  if (computedValue !== undefined) {
+    document.getElementById('computedVal').innerText = computedValue
   }
 }
 

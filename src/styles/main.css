@@ -55,33 +55,16 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted);
 }
-
-/* 全局动画 */
-@keyframes node-flash {
-  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
-  50% { box-shadow: 0 0 24px 6px rgba(16, 185, 129, 0.2); }
-  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
-@keyframes fade-slide-up {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+pre, code {
+  font-family: var(--font-mono);
 }
 
-/* Vue Transition 统一全局动画 */
-.v-enter-active,
-.v-leave-active {
-  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.v-enter-from {
-  opacity: 0;
-  transform: translateY(12px);
-}
-.v-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
+/* Vue Transition（App.vue <Transition name="fade">）*/
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -89,34 +72,5 @@ body {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-/* 全局标签样式 */
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button {
-  font-family: var(--font-sans);
-  border: none;
-  outline: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-input, textarea {
-  font-family: inherit;
-  border: none;
-  outline: none;
-  background: var(--card);
-  color: var(--fg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-
-/* 全局代码样式（与高亮统一）*/
-pre, code {
-  font-family: var(--font-mono);
 }
 
