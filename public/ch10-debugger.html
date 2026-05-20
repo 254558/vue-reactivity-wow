@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>手写Vue3组件系统（Debugger版）</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+      background: #070b09;
+      color: #d0e4da;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .box {
+      background: #0d1612;
+      border: 1px solid #1a2e25;
+      border-radius: 12px;
+      padding: 40px 48px;
+      text-align: center;
+      max-width: 560px;
+      width: 100%;
+    }
+    .box h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #d0e4da;
+    }
+    .box h1 small {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: #5e8a76;
+      margin-top: 6px;
+    }
+    .display-area {
+      margin: 24px 0;
+      padding: 20px;
+      background: #0a100d;
+      border: 1px solid #1a2e25;
+      border-radius: 8px;
+    }
+    .comp-tree {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .comp-node {
+      border: 2px solid #1a2e25;
+      border-radius: 8px;
+      padding: 12px 16px;
+      width: 100%;
+      transition: all 0.35s;
+    }
+    .comp-node.parent { border-color: rgba(245, 158, 11, 0.5); background: rgba(7,11,9,0.6); }
+    .comp-node.parent.updating { border-color: #f59e0b; box-shadow: 0 0 16px rgba(245,158,11,0.15); }
+    .comp-node.child { border-color: rgba(96, 165, 250, 0.3); background: rgba(7,11,9,0.6); }
+    .comp-node.child.mounted { border-color: rgba(16,185,129,0.4); }
+    .comp-node.child.updating { border-color: #8b5cf6; box-shadow: 0 0 16px rgba(139,92,246,0.15); }
+    .comp-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .comp-icon {
+      width: 22px; height: 22px; border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem;
+    }
+    .comp-icon.parent-icon { background: rgba(245,158,11,0.15); color: #f59e0b; }
+    .comp-icon.child-icon { background: rgba(96,165,250,0.15); color: #60a5fa; }
+    .comp-name { font-size: 0.75rem; font-weight: 700; }
+    .comp-state { font-size: 0.68rem; display: flex; align-items: center; gap: 4px; padding-left: 30px; color: #5e8a76; }
+    .comp-state .val { color: #f59e0b; font-weight: 700; }
+    .comp-state .accent { color: #10b981; }
+    .tree-conn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 0;
+    }
+    .tree-conn .line { width: 2px; height: 14px; background: #1a2e25; }
+    .tree-conn .props {
+      font-size: 0.6rem;
+      color: #5e8a76;
+      background: rgba(7,11,9,0.6);
+      padding: 2px 8px;
+      border-radius: 4px;
+      transition: all 0.3s;
+    }
+    .tree-conn .props.flowing { color: #8b5cf6; background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.3); }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 10px 18px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+      color: white;
+    }
+    .btn-setup { background: linear-gradient(135deg, #6b7280, #9ca3af); }
+    .btn-setup:hover { box-shadow: 0 4px 20px rgba(156, 163, 175, 0.35); transform: translateY(-1px); }
+    .btn-mount { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 2px 12px rgba(16, 185, 129, 0.2); }
+    .btn-mount:hover { box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35); transform: translateY(-1px); }
+    .btn-update { background: linear-gradient(135deg, #7c3aed, #8b5cf6); box-shadow: 0 2px 12px rgba(139, 92, 246, 0.2); }
+    .btn-update:hover { box-shadow: 0 4px 20px rgba(139, 92, 246, 0.35); transform: translateY(-1px); }
+    .btn-child { background: linear-gradient(135deg, #b45309, #f59e0b); box-shadow: 0 2px 12px rgba(245, 158, 11, 0.2); }
+    .btn-child:hover { box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35); transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
+    .tip-box {
+      background: #0a100d;
+      border: 1px solid #1a2e25;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-top: 20px;
+      text-align: left;
+      line-height: 1.9;
+    }
+    .tip-box p { font-size: 0.78rem; color: #5e8a76; }
+    .tip-box strong { color: #d0e4da; }
+    kbd {
+      background: rgba(94, 138, 118, 0.15);
+      border: 1px solid #1a2e25;
+      border-radius: 3px;
+      padding: 1px 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: #10b981;
+    }
+    code { color: #60a5fa; font-family: 'JetBrains Mono', monospace; }
+    .divider { border: none; border-top: 1px solid #1a2e25; margin: 16px 0; }
+    .status-box {
+      background: #070b09;
+      border: 1px solid #1a2e25;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      font-size: 0.75rem;
+      font-family: monospace;
+      line-height: 1.7;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>
+      Vue 组件系统 Debugger
+      <small>先打开 F12 → 按顺序点击按钮逐步学习</small>
+    </h1>
+
+    <div class="display-area">
+      <div class="comp-tree" id="compTree">
+        <div class="comp-node parent" id="parentComp">
+          <div class="comp-header">
+            <div class="comp-icon parent-icon">P</div>
+            <span class="comp-name">ParentComponent</span>
+          </div>
+          <div class="comp-state">
+            <span>state.count</span>
+            <span class="val" id="parentCount">0</span>
+          </div>
+        </div>
+        <div class="tree-conn">
+          <div class="line"></div>
+          <div class="props" id="propsDisplay">props: { title: "---" }</div>
+          <div class="line"></div>
+        </div>
+        <div class="comp-node child" id="childComp">
+          <div class="comp-header">
+            <div class="comp-icon child-icon">C</div>
+            <span class="comp-name">ChildComponent</span>
+          </div>
+          <div class="comp-state">
+            <span>props.title</span>
+            <span class="accent val" id="childTitle">---</span>
+          </div>
+          <div class="comp-state" style="margin-top:2px">
+            <span>setupState.count</span>
+            <span class="accent" id="childCount" style="color:#10b981;font-weight:700">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-setup" id="setupBtn" onclick="setup()">1. 初始化</button>
+      <button class="btn btn-mount" id="mountBtn" onclick="mountComp()" disabled>2. 挂载组件</button>
+      <button class="btn btn-update" id="parentUpdateBtn" onclick="parentUpdate()" disabled>3. 父组件更新</button>
+      <button class="btn btn-child" id="childUpdateBtn" onclick="childUpdate()" disabled>4. 子组件自更新</button>
+    </div>
+
+    <hr class="divider">
+    <div class="status-box" id="logArea">
+      点击「初始化」开始
+    </div>
+  </div>
+
+<script>
+let parentCount = 0
+let childCount = 0
+let childPropTitle = '---'
+let isMounted = false
+
+/* ===== 模拟组件挂载 ===== */
+function mountComponent(name, props, setupState) {
+  debugger // ① mountComponent：创建组件实例
+
+  const instance = {
+    name,
+    props: { ...props },
+    setupState: { ...setupState },
+    isMounted: false,
+    vnode: null,
+    subTree: null
+  }
+
+  debugger // ② 组件实例已创建：name = ${name}
+  return instance
+}
+
+function setupComponent(instance) {
+  debugger // ③ setupComponent：执行 setup，建立响应式连接
+
+  const setupResult = instance.setupState
+  debugger // setup 执行完毕，绑定 props/state
+
+  return () => {
+    debugger // render 函数：生成 subTree
+    return { tag: 'div', children: `Hello ${instance.props.title}` }
+  }
+}
+
+function mountElement(vnode, container) {
+  debugger // ⑤ mountElement：创建 DOM
+  const el = document.createElement(vnode.tag || 'div')
+  el.textContent = typeof vnode.children === 'string' ? vnode.children : ''
+  container.appendChild(el)
+  debugger // ⑥ DOM 已挂载
+  return el
+}
+
+/* ===== 更新流程 ===== */
+function patch(prev, next, container) {
+  debugger // 进入 patch：对比旧新 VNode，更新 DOM
+
+  debugger // 比较 props、children...
+  container.textContent = typeof next.children === 'string' ? next.children : container.textContent
+
+  debugger // patch 完成
+}
+
+/* ===== 按钮操作 ===== */
+function setup() {
+  document.getElementById('setupBtn').disabled = true
+  parentCount = 0
+  childCount = 0
+  childPropTitle = '---'
+  isMounted = false
+  document.getElementById('propsDisplay').innerText = 'props: { title: "---" }'
+  document.getElementById('mountBtn').disabled = false
+  updateDisplay()
+  log('初始化完成')
+}
+
+function mountComp() {
+  debugger // 点击：开始挂载组件
+  document.getElementById('mountBtn').disabled = false
+
+  // 创建父组件实例
+  debugger // 创建 ParentComponent
+  const parent = mountComponent('Parent', {}, { count: 0 })
+  parentCount = parent.setupState.count
+
+  // 创建子组件
+  debugger // 创建 ChildComponent
+  const child = mountComponent('Child', { title: 'Hello from Parent' }, { count: 50 })
+  childPropTitle = child.props.title
+  childCount = child.setupState.count
+
+  // setup
+  debugger // Parent setup
+  const render = setupComponent(parent)
+  debugger // Child setup
+  setupComponent(child)
+
+  // mount
+  debugger // ④ 开始渲染 subTree
+  const subTree = render()
+  debugger // 挂载到 DOM
+  mountElement(subTree, document.getElementById('compTree'))
+
+  isMounted = true
+  document.getElementById('childComp').classList.add('mounted')
+  document.getElementById('propsDisplay').innerText = `props: { title: "Hello from Parent" }`
+  document.getElementById('parentUpdateBtn').disabled = false
+  document.getElementById('childUpdateBtn').disabled = false
+
+  updateDisplay()
+  log('组件已挂载：Parent > Child')
+}
+
+function parentUpdate() {
+  debugger // 父组件更新：修改 state.count
+  document.getElementById('parentUpdateBtn').disabled = true
+
+  parentCount++
+  debugger // count = ${parentCount}，重新渲染
+  debugger // patch 子组件：props.title 不变，子组件不更新
+
+  document.getElementById('parentUpdateBtn').disabled = false
+  updateDisplay()
+  log(`父组件更新：count → ${parentCount}`)
+}
+
+function childUpdate() {
+  debugger // 子组件内部更新
+  document.getElementById('childUpdateBtn').disabled = true
+
+  childCount++
+  debugger // 子组件自更新：只影响自身，不影响父组件
+
+  document.getElementById('childUpdateBtn').disabled = false
+  updateDisplay()
+  log(`子组件自更新：count → ${childCount}`)
+}
+
+function updateDisplay() {
+  document.getElementById('parentCount').innerText = parentCount
+  document.getElementById('childTitle').innerText = childPropTitle
+  document.getElementById('childCount').innerText = childCount
+}
+
+function log(msg) {
+  const area = document.getElementById('logArea')
+  const t = new Date().toLocaleTimeString()
+  area.innerHTML = `[${t}] ${msg}\n` + area.innerHTML
+}
+</script>
+</body>
+</html>

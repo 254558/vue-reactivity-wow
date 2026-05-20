@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>手写Vue3编译器（Debugger版）</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+      background: #070b09;
+      color: #d0e4da;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .box {
+      background: #0d1612;
+      border: 1px solid #1a2e25;
+      border-radius: 12px;
+      padding: 40px 48px;
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+    }
+    .box h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #d0e4da;
+    }
+    .box h1 small {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: #5e8a76;
+      margin-top: 6px;
+    }
+    .display-area {
+      margin: 24px 0;
+      padding: 20px;
+      background: #0a100d;
+      border: 1px solid #1a2e25;
+      border-radius: 8px;
+    }
+    .display-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin: 6px 0;
+    }
+    .display-label { font-size: 0.78rem; color: #5e8a76; }
+    .pipeline {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+    .stage {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: rgba(7,11,9,0.4);
+      border: 1px solid #1a2e25;
+      border-radius: 8px;
+      transition: all 0.4s;
+      opacity: 0.35;
+    }
+    .stage.active { opacity: 0.8; border-color: rgba(94,138,118,0.4); }
+    .stage.processing { opacity: 1; border-color: rgba(16,185,129,0.6); background: rgba(16,185,129,0.06); }
+    .stage-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; flex-shrink: 0;
+    }
+    .stage-icon.parse { background: rgba(96,165,250,0.12); color: #60a5fa; }
+    .stage-icon.transform { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+    .stage-icon.codegen { background: rgba(239,68,68,0.12); color: #ef4444; }
+    .stage-info { display: flex; flex-direction: column; gap: 2px; flex: 1; text-align: left; }
+    .stage-label { font-weight: 700; font-size: 0.82rem; }
+    .stage-desc { font-size: 0.62rem; color: #5e8a76; }
+    .pipe-arrow { color: rgba(94,138,118,0.2); padding: 4px 0; }
+    .pipe-arrow.active { color: #10b981; }
+    .code-box {
+      margin-top: 10px;
+      background: #070b09;
+      border: 1px solid #1a2e25;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      text-align: left;
+      line-height: 1.6;
+      min-height: 40px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .code-box .kw { color: #7dd3a8; }
+    .code-box .fn { color: #fbbf24; }
+    .code-box .str { color: #f0a85e; }
+    .code-box .key { color: #60a5fa; }
+    .code-box .muted { color: #5e8a76; }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 10px 18px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+      color: white;
+    }
+    .btn-setup { background: linear-gradient(135deg, #6b7280, #9ca3af); }
+    .btn-setup:hover { box-shadow: 0 4px 20px rgba(156, 163, 175, 0.35); transform: translateY(-1px); }
+    .btn-parse { background: linear-gradient(135deg, #2563eb, #60a5fa); box-shadow: 0 2px 12px rgba(96, 165, 250, 0.2); }
+    .btn-parse:hover { box-shadow: 0 4px 20px rgba(96, 165, 250, 0.35); transform: translateY(-1px); }
+    .btn-transform { background: linear-gradient(135deg, #7c3aed, #a78bfa); box-shadow: 0 2px 12px rgba(167, 139, 250, 0.2); }
+    .btn-transform:hover { box-shadow: 0 4px 20px rgba(167, 139, 250, 0.35); transform: translateY(-1px); }
+    .btn-codegen { background: linear-gradient(135deg, #dc2626, #ef4444); box-shadow: 0 2px 12px rgba(239, 68, 68, 0.2); }
+    .btn-codegen:hover { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35); transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
+    .tip-box {
+      background: #0a100d;
+      border: 1px solid #1a2e25;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-top: 20px;
+      text-align: left;
+      line-height: 1.9;
+    }
+    .tip-box p { font-size: 0.78rem; color: #5e8a76; }
+    .tip-box strong { color: #d0e4da; }
+    kbd {
+      background: rgba(94, 138, 118, 0.15);
+      border: 1px solid #1a2e25;
+      border-radius: 3px;
+      padding: 1px 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: #10b981;
+    }
+    code { color: #60a5fa; font-family: 'JetBrains Mono', monospace; }
+    .divider { border: none; border-top: 1px solid #1a2e25; margin: 16px 0; }
+    .status-box {
+      background: #070b09;
+      border: 1px solid #1a2e25;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      font-size: 0.75rem;
+      font-family: monospace;
+      line-height: 1.7;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>
+      Vue 编译器 Debugger
+      <small>先打开 F12 → 按顺序点击按钮逐步学习</small>
+    </h1>
+
+    <div class="display-area">
+      <div class="pipeline">
+        <div class="stage" id="stage-template">
+          <div class="stage-icon" style="background:rgba(94,138,118,0.15);color:#5e8a76">&lt;/&gt;</div>
+          <div class="stage-info">
+            <span class="stage-label">Template</span>
+            <span class="stage-desc">模板字符串</span>
+          </div>
+        </div>
+        <div class="pipe-arrow" id="arrow-parse">↓</div>
+        <div class="stage" id="stage-parse">
+          <div class="stage-icon parse">P</div>
+          <div class="stage-info">
+            <span class="stage-label">Parse</span>
+            <span class="stage-desc">解析为 AST</span>
+          </div>
+        </div>
+        <div class="pipe-arrow" id="arrow-transform">↓</div>
+        <div class="stage" id="stage-transform">
+          <div class="stage-icon transform">T</div>
+          <div class="stage-info">
+            <span class="stage-label">Transform</span>
+            <span class="stage-desc">转换与优化</span>
+          </div>
+        </div>
+        <div class="pipe-arrow" id="arrow-codegen">↓</div>
+        <div class="stage" id="stage-codegen">
+          <div class="stage-icon codegen">C</div>
+          <div class="stage-info">
+            <span class="stage-label">Codegen</span>
+            <span class="stage-desc">生成渲染函数</span>
+          </div>
+        </div>
+      </div>
+      <div class="code-box" id="codeBox"><span class="muted">等待初始化...</span></div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-setup" id="setupBtn" onclick="setup()">1. 初始化</button>
+      <button class="btn btn-parse" id="parseBtn" onclick="doParse()" disabled>2. Parse</button>
+      <button class="btn btn-transform" id="transformBtn" onclick="doTransform()" disabled>3. Transform</button>
+      <button class="btn btn-codegen" id="codegenBtn" onclick="doCodegen()" disabled>4. Codegen</button>
+    </div>
+
+    <hr class="divider">
+    <div class="status-box" id="logArea">
+      点击「初始化」开始
+    </div>
+  </div>
+
+<script>
+const template = `<div id="app">
+  <p>hello {{ name }}</p>
+</div>`
+
+let ast = null
+
+/* ===== Parse ===== */
+function parse(templateStr) {
+  debugger // ① parse：解析模板字符串
+
+  const ast = {
+    type: 'Root',
+    children: []
+  }
+
+  debugger // 解析根元素
+  const root = {
+    type: 'Element',
+    tag: 'div',
+    props: { id: 'app' },
+    children: [],
+    isStatic: true
+  }
+  ast.children.push(root)
+
+  debugger // 解析子元素
+  const pElem = {
+    type: 'Element',
+    tag: 'p',
+    props: {},
+    children: [],
+    isStatic: false
+  }
+
+  debugger // 解析文本子节点
+  pElem.children.push({
+    type: 'Text',
+    content: 'hello ',
+    isStatic: true
+  })
+
+  debugger // 解析插值表达式
+  pElem.children.push({
+    type: 'Interpolation',
+    content: { type: 'Expression', content: 'name' },
+    isStatic: false
+  })
+
+  root.children.push(pElem)
+
+  debugger // AST 构建完成
+  return ast
+}
+
+/* ===== Transform ===== */
+function transform(ast) {
+  debugger // ④ transform：遍历 AST，标记优化信息
+
+  function traverseNode(node) {
+    debugger // 访问节点：${node.type || node.tag}
+    if (node.children) {
+      node.children.forEach(child => traverseNode(child))
+    }
+    debugger // 返回上一层
+  }
+
+  traverseNode(ast)
+  debugger // 优化标记完成（如静态提升、patchFlag）
+  return ast
+}
+
+/* ===== Codegen ===== */
+function codegen(ast) {
+  debugger // ⑥ codegen：根据 AST 生成渲染函数代码
+
+  let code = `function render() {\n  return h('div', { id: "app" }, [\n    h('p', null, [\n      "hello ",\n      _ctx.name\n    ])\n  ])\n}`
+
+  debugger // codegen 完成：生成渲染函数
+  return code
+}
+
+/* ===== 阶段更新 ===== */
+function setStage(stage, state) {
+  const el = document.getElementById('stage-' + stage)
+  if (state === 'active') el.className = 'stage active'
+  else if (state === 'processing') el.className = 'stage processing'
+  else el.className = 'stage'
+}
+
+/* ===== 按钮操作 ===== */
+function setup() {
+  document.getElementById('setupBtn').disabled = true
+
+  setStage('template', 'active')
+  document.getElementById('codeBox').innerHTML = `<span class="muted">模板:</span> ${template.replace(/</g, '&lt;')}`
+
+  document.getElementById('parseBtn').disabled = false
+  log('初始化完成，模板已就绪')
+}
+
+function doParse() {
+  debugger // 开始解析
+  document.getElementById('parseBtn').disabled = true
+
+  setStage('parse', 'processing')
+  document.getElementById('arrow-parse').className = 'pipe-arrow active'
+
+  ast = parse(template)
+
+  setStage('parse', 'active')
+  document.getElementById('codeBox').innerHTML = `<span class="key">AST:</span>
+<span class="muted">Root</span>
+  <span class="kw">Element</span> <span class="str">div</span>
+    <span class="key">props</span>: { id: <span class="str">"app"</span> }
+    <span class="kw">Element</span> <span class="str">p</span>
+      <span class="muted">Text</span> <span class="str">"hello "</span>
+      <span class="muted">Interpolation</span> { <span class="key">content</span>: <span class="fn">name</span> }`
+
+  document.getElementById('transformBtn').disabled = false
+  log('Parse 完成 → AST 已构建')
+}
+
+function doTransform() {
+  debugger // 开始转换
+  document.getElementById('transformBtn').disabled = true
+
+  setStage('transform', 'processing')
+  document.getElementById('arrow-transform').className = 'pipe-arrow active'
+
+  transform(ast)
+
+  setStage('transform', 'active')
+  document.getElementById('codeBox').innerHTML = `<span class="key">Transformed AST</span>
+<span class="muted">（静态节点已标记，patch 类型已优化）</span>
+<span class="muted">div</span> <span class="muted">→ patchFlag: STATIC</span>
+  <span class="muted">p</span> <span class="muted">→ patchFlag: DYNAMIC (含插值)</span>
+    <span class="muted">Text "hello "</span> <span class="muted">→ 静态提升</span>
+    <span class="muted">Interpolation name</span> <span class="muted">→ 动态绑定</span>`
+
+  document.getElementById('codegenBtn').disabled = false
+  log('Transform 完成 → 节点已优化')
+}
+
+function doCodegen() {
+  debugger // 开始生成渲染函数
+  document.getElementById('codegenBtn').disabled = true
+
+  setStage('codegen', 'processing')
+  document.getElementById('arrow-codegen').className = 'pipe-arrow active'
+
+  const code = codegen(ast)
+
+  setStage('codegen', 'active')
+  document.getElementById('codeBox').innerHTML = `<span class="kw">function</span> <span class="fn">render</span>() {
+  <span class="kw">return</span> <span class="fn">h</span>(<span class="str">'div'</span>, { <span class="key">id</span>: <span class="str">"app"</span> }, [
+    <span class="fn">h</span>(<span class="str">'p'</span>, <span class="kw">null</span>, [
+      <span class="str">"hello "</span>,
+      <span class="muted">_ctx</span>.name
+    ])
+  ])
+}`
+
+  log('Codegen 完成 → 渲染函数已生成！')
+}
+
+function log(msg) {
+  const area = document.getElementById('logArea')
+  const t = new Date().toLocaleTimeString()
+  area.innerHTML = `[${t}] ${msg}\n` + area.innerHTML
+}
+</script>
+</body>
+</html>

@@ -1,15 +1,12 @@
 <template>
-  <div class="chapter-layout" v-if="chapterModule">
-    <!-- 返回与章节标题 -->
+  <div class="chapter-layout" v-if="current">
     <div class="chapter-topbar">
       <router-link to="/" class="back-link">
         <i class="fa-solid fa-arrow-left"></i> 返回目录
       </router-link>
-      <h2 class="chapter-heading">{{ chapterModule.meta.title }}</h2>
+      <h2 class="chapter-heading">{{ current.title }}</h2>
     </div>
-
-    <!-- 动态加载章节内容 -->
-    <component :is="chapterModule.Demo" />
+    <ChapterFrame :pageUrl="current.url" />
   </div>
   <div v-else class="not-found">
     <h2>章节建设中</h2>
@@ -21,64 +18,26 @@
 </template>
 
 <script setup>
-import { ref, watch, defineAsyncComponent, shallowRef } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import ChapterFrame from '@/components/ChapterFrame.vue'
 
 const route = useRoute()
-const chapterModule = shallowRef(null)
 
-// 章节映射表：后续新增章节只需在这里添加
-const chapterMap = {
-  '1': {
-    Demo: defineAsyncComponent(() => import('@/chapters/ch1-reactivity/Demo.vue')),
-    meta: { title: '响应式系统：reactive 与 effect' },
-  },
-  '2': {
-    Demo: defineAsyncComponent(() => import('@/chapters/ch2-scheduler/Demo.vue')),
-    meta: { title: '调度系统：scheduler' },
-  },
-  '3': {
-    Demo: defineAsyncComponent(() => import('@/chapters/ch3-computed/Demo.vue')),
-    meta: { title: '计算属性：computed' },
-  },
-  '4': {
-    Demo: defineAsyncComponent(() => import('@/chapters/ch4-watch/Demo.vue')),
-    meta: { title: '侦听器：watch' },
-  },
-  '5': {
-    Demo: defineAsyncComponent(() => import('@/chapters/ch5-ref/Demo.vue')),
-    meta: { title: '原始值响应式：ref' }
-  },
-  '6': {
-    Demo: defineAsyncComponent(() => import('@/chapters/ch6-nested/Demo.vue')),
-    meta: { title: '嵌套 effect 与作用域' }
-  },
-  '7': {
-    Demo: defineAsyncComponent(() => import('@/chapters/ch7-vnode/Demo.vue')),
-    meta: { title: '虚拟 DOM' }
-  },
-  '8': {
-    Demo: defineAsyncComponent(() => import('@/chapters/ch8-diff/Demo.vue')),
-    meta: { title: 'Diff 算法' }
-  },
-  '9': {
-    Demo: defineAsyncComponent(() => import('@/chapters/ch9-compile/Demo.vue')),
-    meta: { title: '编译模板' }
-  },
-  '10': {
-    Demo: defineAsyncComponent(() => import('@/chapters/ch10-component/Demo.vue')),
-    meta: { title: '组件系统' }
-  },
+const chapters = {
+  '1': { url: '/ch1-debugger.html', title: '响应式系统：reactive 与 effect' },
+  '2': { url: '/ch2-debugger.html', title: '调度系统：scheduler' },
+  '3': { url: '/ch3-debugger.html', title: '计算属性：computed' },
+  '4': { url: '/ch4-debugger.html', title: '侦听器：watch' },
+  '5': { url: '/ch5-debugger.html', title: '原始值响应式：ref' },
+  '6': { url: '/ch6-debugger.html', title: '嵌套 effect 与作用域' },
+  '7': { url: '/ch7-debugger.html', title: '虚拟 DOM' },
+  '8': { url: '/ch8-debugger.html', title: 'Diff 算法' },
+  '9': { url: '/ch9-debugger.html', title: '编译模板' },
+  '10': { url: '/ch10-debugger.html', title: '组件系统' },
 }
 
-// 监听路由变化加载对应章节
-watch(
-  () => route.params.id,
-  (id) => {
-    chapterModule.value = chapterMap[id] || null
-  },
-  { immediate: true }
-)
+const current = computed(() => chapters[route.params.id])
 </script>
 
 <style scoped>

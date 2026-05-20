@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>手写Vue3 Ref（Debugger版）</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+      background: #070b09;
+      color: #d0e4da;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .box {
+      background: #0d1612;
+      border: 1px solid #1a2e25;
+      border-radius: 12px;
+      padding: 40px 48px;
+      text-align: center;
+      max-width: 560px;
+      width: 100%;
+    }
+    .box h1 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #d0e4da;
+    }
+    .box h1 small {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 400;
+      color: #5e8a76;
+      margin-top: 6px;
+    }
+    .display-area {
+      margin: 24px 0;
+      padding: 20px;
+      background: #0a100d;
+      border: 1px solid #1a2e25;
+      border-radius: 8px;
+    }
+    .display-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin: 6px 0;
+    }
+    .display-label { font-size: 0.78rem; color: #5e8a76; }
+    .display-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+    }
+    .display-val.count { color: #f59e0b; font-size: 2rem; }
+    .display-val.track { color: #10b981; font-size: 0.9rem; }
+    .display-val.trigger { color: #ef4444; font-size: 0.9rem; }
+    .display-val.unwrap { color: #60a5fa; font-size: 0.9rem; }
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 10px 18px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+      color: white;
+    }
+    .btn-setup { background: linear-gradient(135deg, #6b7280, #9ca3af); }
+    .btn-setup:hover { box-shadow: 0 4px 20px rgba(156, 163, 175, 0.35); transform: translateY(-1px); }
+    .btn-ref { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 2px 12px rgba(16, 185, 129, 0.2); }
+    .btn-ref:hover { box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35); transform: translateY(-1px); }
+    .btn-read { background: linear-gradient(135deg, #2563eb, #60a5fa); box-shadow: 0 2px 12px rgba(96, 165, 250, 0.2); }
+    .btn-read:hover { box-shadow: 0 4px 20px rgba(96, 165, 250, 0.35); transform: translateY(-1px); }
+    .btn-write { background: linear-gradient(135deg, #b91c1c, #ef4444); box-shadow: 0 2px 12px rgba(239, 68, 68, 0.2); }
+    .btn-write:hover { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.35); transform: translateY(-1px); }
+    .btn-unwrap { background: linear-gradient(135deg, #7c3aed, #a78bfa); box-shadow: 0 2px 12px rgba(167, 139, 250, 0.2); }
+    .btn-unwrap:hover { box-shadow: 0 4px 20px rgba(167, 139, 250, 0.35); transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
+    .tip-box {
+      background: #0a100d;
+      border: 1px solid #1a2e25;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-top: 20px;
+      text-align: left;
+      line-height: 1.9;
+    }
+    .tip-box p { font-size: 0.78rem; color: #5e8a76; }
+    .tip-box strong { color: #d0e4da; }
+    kbd {
+      background: rgba(94, 138, 118, 0.15);
+      border: 1px solid #1a2e25;
+      border-radius: 3px;
+      padding: 1px 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: #10b981;
+    }
+    code { color: #60a5fa; font-family: 'JetBrains Mono', monospace; }
+    .divider {
+      border: none;
+      border-top: 1px solid #1a2e25;
+      margin: 16px 0;
+    }
+    .status-box {
+      background: #070b09;
+      border: 1px solid #1a2e25;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-top: 10px;
+      font-size: 0.75rem;
+      font-family: monospace;
+      line-height: 1.7;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>
+      Vue Ref Debugger
+      <small>先打开 F12 → 按顺序点击按钮逐步学习</small>
+    </h1>
+
+    <div class="display-area">
+      <div class="display-row">
+        <span class="display-label">ref.value</span>
+        <span class="display-val count" id="refVal">未创建</span>
+      </div>
+      <div class="display-row">
+        <span class="display-label">track 状态</span>
+        <span class="display-val track" id="trackStatus">—</span>
+      </div>
+      <div class="display-row">
+        <span class="display-label">trigger 状态</span>
+        <span class="display-val trigger" id="triggerStatus">—</span>
+      </div>
+      <hr class="divider">
+      <div class="display-row">
+        <span class="display-label">auto-unwrap (proxyRefs)</span>
+        <span class="display-val unwrap" id="unwrapVal">未启用</span>
+      </div>
+      <div class="display-row" style="font-size:0.75rem;color:#5e8a76;font-family:monospace">
+        <span>get 次数：<span id="getCount">0</span></span>
+        <span style="margin:0 8px">|</span>
+        <span>set 次数：<span id="setCount">0</span></span>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-setup" id="setupBtn" onclick="setup()">1. 初始化</button>
+      <button class="btn btn-ref" id="refBtn" onclick="createRef()" disabled>2. 创建 ref(0)</button>
+      <button class="btn btn-read" id="readBtn" onclick="readRef()" disabled>3. 读取 .value</button>
+      <button class="btn btn-write" id="writeBtn" onclick="writeRef()" disabled>4. 修改 .value</button>
+      <button class="btn btn-unwrap" id="unwrapBtn" onclick="demoUnwrap()" disabled>5. auto-unwrap</button>
+    </div>
+
+    <hr class="divider">
+    <div class="status-box" id="logArea">
+      点击「初始化」开始
+    </div>
+  </div>
+
+<script>
+/* ===== 响应式基础 ===== */
+let activeEffect = null
+const bucket = new Map()
+let _getCount = 0
+let _setCount = 0
+
+function effect(fn, options = {}) {
+  const effectFn = () => { activeEffect = effectFn; fn() }
+  effectFn.options = options
+  effectFn()
+  return effectFn
+}
+
+function track(target, key) {
+  if (!activeEffect) return
+  document.getElementById('trackStatus').innerText = 'track() 执行中...'
+  let depsMap = bucket.get(target)
+  if (!depsMap) { depsMap = new Map(); bucket.set(target, depsMap) }
+  let deps = depsMap.get(key)
+  if (!deps) { deps = new Set(); depsMap.set(key, deps) }
+  deps.add(activeEffect)
+  document.getElementById('trackStatus').innerText = `已追踪 (key: "${key}")`
+}
+
+function trigger(target, key) {
+  document.getElementById('triggerStatus').innerText = 'trigger() 执行中...'
+  const depsMap = bucket.get(target)
+  if (!depsMap) return
+  const effects = depsMap.get(key)
+  effects && effects.forEach(fn => {
+    if (fn.options.scheduler) { fn.options.scheduler(fn) }
+    else { fn() }
+  })
+}
+
+let refObj = null
+let unwrapped = null
+
+/* ===== ref 实现 ===== */
+function ref(val) {
+  debugger // ① 进入 ref：要包装原始值
+
+  const wrapper = {
+    value: val
+  }
+  debugger // ② 用对象包一层：{ value: val }
+
+  // 为 ref 添加标识
+  Object.defineProperty(wrapper, '__v_isRef', { value: true })
+
+  const proxy = new Proxy(wrapper, {
+    get(target, key) {
+      debugger // ③/⑥ get 拦截：读取 key = "${key}"
+      _getCount++
+      document.getElementById('getCount').innerText = _getCount
+      if (key === '__v_isRef') return true
+      track(proxy, key)
+      debugger // track 完成
+      return target[key]
+    },
+    set(target, key, newVal) {
+      debugger // ④ set 拦截：设置 key = "${key}", newVal = ${newVal}
+      target[key] = newVal
+      _setCount++
+      document.getElementById('setCount').innerText = _setCount
+      trigger(proxy, key)
+      debugger // trigger 完成，值已更新
+      return true
+    }
+  })
+
+  debugger // ref proxy 已创建
+  return proxy
+}
+
+/* ===== proxyRefs (auto-unwrap) ===== */
+function proxyRefs(target) {
+  debugger // 进入 proxyRefs：创建 auto-unwrap proxy
+  return new Proxy(target, {
+    get(target, key) {
+      const val = target[key]
+      debugger // proxyRefs get: key = "${key}", val = ${val}
+      if (val && val.__v_isRef) {
+        debugger // 检测到 ref → 自动脱 ref 返回 .value
+        return val.value
+      }
+      return val
+    },
+    set(target, key, newVal) {
+      const val = target[key]
+      debugger // proxyRefs set: key = "${key}", newVal = ${newVal}
+      if (val && val.__v_isRef) {
+        debugger // 检测到 ref → 自动脱 ref 设置 .value
+        val.value = newVal
+        return true
+      }
+      target[key] = newVal
+      return true
+    }
+  })
+}
+
+/* ===== 按钮操作 ===== */
+function setup() {
+  document.getElementById('setupBtn').disabled = true
+  document.getElementById('refBtn').disabled = false
+  log('初始化完成')
+}
+
+function createRef() {
+  debugger // 用户操作：创建 ref
+  document.getElementById('refBtn').disabled = true
+  refObj = ref(0)
+  document.getElementById('refVal').innerText = refObj.value
+  document.getElementById('readBtn').disabled = false
+  document.getElementById('writeBtn').disabled = false
+  document.getElementById('unwrapBtn').disabled = false
+  log('ref(0) 已创建')
+}
+
+function readRef() {
+  debugger // 用户操作：读取 ref.value
+  const v = refObj.value
+  debugger // 读取完成
+  document.getElementById('refVal').innerText = v
+  log(`读取 ref.value → ${v}`)
+}
+
+function writeRef() {
+  debugger // 用户操作：修改 ref.value
+  refObj.value++
+  debugger // 修改完成
+  document.getElementById('refVal').innerText = refObj.value
+  log(`ref.value → ${refObj.value}`)
+}
+
+function demoUnwrap() {
+  debugger // 演示 auto-unwrap
+
+  const obj = {
+    count: ref(42)
+  }
+  unwrapped = proxyRefs(obj)
+  document.getElementById('unwrapVal').innerText = 'obj.count'
+
+  debugger // 通过 proxyRefs 读取：不需要 .value
+  const v = unwrapped.count
+  debugger // unwrapped.count = ${v}（自动脱 ref）
+  document.getElementById('unwrapVal').innerText = v
+  log(`proxyRefs 自动脱 ref: obj.count → ${v}（无需 .value）`)
+}
+
+function log(msg) {
+  const area = document.getElementById('logArea')
+  const t = new Date().toLocaleTimeString()
+  area.innerHTML = `[${t}] ${msg}\n` + area.innerHTML
+}
+</script>
+</body>
+</html>

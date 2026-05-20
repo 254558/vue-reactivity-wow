@@ -5,6 +5,12 @@
     <div class="bg-glow glow-2"></div>
 
     <div class="home-container">
+      <!-- 浏览器兼容提示 -->
+      <div class="browser-warning">
+        <i class="fa-brands fa-chrome"></i>
+        <span>当前页面仅支持 <strong>Chrome 浏览器</strong>（需要 DevTools debugger 功能），其他浏览器的 debugger 体验不一致。</span>
+      </div>
+
       <!-- 英雄区 -->
       <section class="hero">
         <div class="hero-badge">INTERACTIVE LEARNING</div>
@@ -153,6 +159,29 @@ const chapters = reactive([
 .hero-desc {
   color: var(--muted); font-size: 1.05rem; max-width: 600px;
   margin: 0 auto; line-height: 1.7;
+}
+
+/* 浏览器兼容提示 */
+.browser-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 2.5rem;
+  font-size: 0.82rem;
+  color: var(--amber);
+  line-height: 1.5;
+}
+.browser-warning i {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  color: #4285f4;
+}
+.browser-warning strong {
+  color: #d0e4da;
 }
 
 /* 章节列表 */
