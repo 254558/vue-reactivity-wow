@@ -123,12 +123,13 @@
   </DemoLayout>
 </template>
 <script setup>
-import { computed } from 'vue'
+import { computed, onUnmounted } from 'vue'
 import { useChapter8Store } from '@/stores/chapter8'
 import { sourceCode } from './data'
 import DemoLayout from '@/components/DemoLayout.vue'
 
 const store = useChapter8Store()
+onUnmounted(() => { store.reset() })
 
 const matchType = computed(() => {
   if (store.currentStep < 2) return null

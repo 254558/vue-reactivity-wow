@@ -124,12 +124,13 @@
   </DemoLayout>
 </template>
 <script setup>
-import { watch } from 'vue'
+import { watch, onUnmounted } from 'vue'
 import { useChapter7Store } from '@/stores/chapter7'
 import { sourceCode } from './data'
 import DemoLayout from '@/components/DemoLayout.vue'
 
 const store = useChapter7Store()
+onUnmounted(() => { store.reset() })
 
 // 步骤1时自动触发DOM属性计数
 watch(() => store.currentStep, (val) => {

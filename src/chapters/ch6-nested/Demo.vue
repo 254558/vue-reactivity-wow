@@ -113,12 +113,13 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onUnmounted } from 'vue'
 import { useChapter6Store } from '@/stores/chapter6'
 import { sourceCode } from './data'
 import DemoLayout from '@/components/DemoLayout.vue'
 
 const store = useChapter6Store()
+onUnmounted(() => { store.reset() })
 </script>
 
 <style scoped>

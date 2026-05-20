@@ -113,12 +113,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onUnmounted } from 'vue'
 import { useChapter2Store } from '@/stores/chapter2'
 import { sourceCode } from './data'
 import DemoLayout from '@/components/DemoLayout.vue'
 
 const store = useChapter2Store()
+onUnmounted(() => { store.reset() })
+
 const hl = computed(() => store.currentStepData?.highlight || {})
 </script>
 

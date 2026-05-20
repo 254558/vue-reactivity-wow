@@ -123,12 +123,14 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue'
+import { computed, watch, onUnmounted } from 'vue'
 import { useChapter4Store } from '@/stores/chapter4'
 import { sourceCode } from './data'
 import DemoLayout from '@/components/DemoLayout.vue'
 
 const store = useChapter4Store()
+onUnmounted(() => { store.reset() })
+
 const hl = computed(() => store.currentStepData?.highlight || {})
 // 步骤3时自动演示 traverse
 watch(() => store.currentStep, (val) => {

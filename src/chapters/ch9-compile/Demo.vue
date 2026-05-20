@@ -117,11 +117,13 @@
   </DemoLayout>
 </template>
 <script setup>
+import { onUnmounted } from 'vue'
 import { useChapter9Store } from '@/stores/chapter9'
 import { sourceCode } from './data'
 import DemoLayout from '@/components/DemoLayout.vue'
 
 const store = useChapter9Store()
+onUnmounted(() => { store.reset() })
 
 function getLogClass(type) {
   if (type === 'parse') return 'parse'

@@ -99,11 +99,13 @@
 </template>
 
 <script setup>
+import { onUnmounted } from 'vue'
 import { useChapter3Store } from '@/stores/chapter3'
 import { sourceCode } from './data'
 import DemoLayout from '@/components/DemoLayout.vue'
 
 const store = useChapter3Store()
+onUnmounted(() => { store.reset() })
 </script>
 
 <style scoped>

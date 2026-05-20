@@ -19,14 +19,9 @@ export const useChapter6Store = defineStore('chapter6', () => {
     return effectStack.value.length > 0 ? effectStack.value[effectStack.value.length - 1] : 'null'
   })
 
-  // 错误模式：无栈时的 activeEffect
-  const wrongActiveEffect = ref('null')
-
   function nextStep() {
-    if (base.currentStep.value < base.totalSteps) {
-      base.currentStep.value++
-      if (base.currentStep.value === 3) simulateInitialRender()
-    }
+    base.nextStep()
+    if (base.currentStep.value === 3) simulateInitialRender()
   }
 
   // 模拟初始渲染的入栈出栈
@@ -82,7 +77,7 @@ export const useChapter6Store = defineStore('chapter6', () => {
 
   return {
     ...base,
-    showFlag, textVal, effectStack, activeEffectName, wrongActiveEffect,
+    showFlag, textVal, effectStack, activeEffectName,
     isPushing, isPopping, isTriggering,
     nextStep, simulateInitialRender, simulateChangeText, reset
   }
