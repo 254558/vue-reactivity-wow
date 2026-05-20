@@ -1,8 +1,8 @@
 # Vue 是怎么工作的
 
-逐步拆解 Vue 响应式系统与渲染机制的交互式 Debugger 教学项目。
+逐步拆解 Vue 3 响应式系统与渲染机制的交互式 Debugger 教学项目。共 10 章，从 `reactive` 到组件系统逐层递进。
 
-**每章一个独立的 HTML 调试页面**，代码中嵌入了 `debugger` 语句。打开 Chrome DevTools，点击按钮，即可一步步观察 Vue 核心原理的执行过程。
+**每章一个独立的 HTML 调试页面**，代码中嵌入 `debugger` 语句。打开 Chrome DevTools → Sources，点击按钮，即可单步观察 Vue 核心原理的执行过程。
 
 ## 快速启动
 
@@ -22,16 +22,16 @@ pnpm dev        # 开发，浏览器打开 http://localhost:5173
 
 | 章节 | 内容 | 按钮流程 |
 |------|------|---------|
-| 01 | reactive 与 effect | 初始化 → +1 → -1 |
-| 02 | scheduler 调度器 | 初始化 → 无调度器改3次 → 有调度器改3次 |
-| 03 | computed 计算属性 | 初始化 → 读 → 再读(缓存) → 改 → 再读(重新计算) |
-| 04 | watch 侦听器 | 初始化 → 创建 watch → 改 count → 改 nested |
-| 05 | ref 原始值响应式 | 初始化 → 创建 ref → 读取 → 修改 → auto-unwrap |
-| 06 | 嵌套 effect | 初始化 → 嵌套 effect → 覆盖问题 → 栈解决 → 修改 |
-| 07 | 虚拟 DOM | 初始化 → 创建 VNode → mountElement 分步 |
-| 08 | Diff 算法 | 初始化 → 执行一步 → 全部执行 → 重置 |
-| 09 | 编译模板 | 初始化 → Parse → Transform → Codegen |
-| 10 | 组件系统 | 初始化 → 挂载 → 父更新 → 子自更新 |
+| 01 | reactive 响应式与依赖收集 | 初始化 → +1 → -1 |
+| 02 | scheduler 调度系统与异步批处理 | 初始化 → 同步 x3 → 调度器 x3 |
+| 03 | computed 计算属性与 dirty 缓存 | 初始化 → 读取 → 缓存 → 修改 → 重新计算 |
+| 04 | watch 侦听器与 traverse 深度遍历 | 初始化 → 创建 watch → 改 count → 改 nested |
+| 05 | ref 原始值响应式与 proxyRefs 自动解包 | 初始化 → ref(0) → 读取 → 修改 → proxyRefs |
+| 06 | 嵌套 effect 与 effectStack 作用域 | 初始化 → 嵌套 effect → 覆盖问题 → 栈解决 → 修改 |
+| 07 | 虚拟 DOM 与 mountElement 五步流程 | 初始化 → 创建 VNode → 挂载 |
+| 08 | 双端 Diff 算法与四指针比较 | 初始化 → 单步 → 全部 → 重置 |
+| 09 | 编译模板 parse/transform/codegen | 初始化 → Parse → Transform → Codegen |
+| 10 | 组件系统：实例、生命周期、patch | 初始化 → 挂载 → 父更新 → 子自更新 → 改 props |
 
 ## 项目结构
 
