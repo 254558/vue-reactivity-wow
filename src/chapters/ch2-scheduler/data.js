@@ -89,7 +89,7 @@ export const steps = [
     desc: '默认情况下，每次修改响应式数据，副作用函数都会同步且立即执行。如果在短时间内连续修改多次，会导致不必要的多次渲染，性能浪费。',
     detail: 'state.count++ → 执行 effectFn (渲染)\nstate.count++ → 执行 effectFn (渲染)\nstate.count++ → 执行 effectFn (渲染)\n\n结果：渲染了 3 次，但用户只需看到最终结果 3',
     color: '#ef4444',
-    lines: [53, 54, 55, 56],
+    lines: [51, 52, 53, 54, 55, 56],
     highlight: { scheduler: false, trigger: false, queue: false },
   },
   {
@@ -99,7 +99,6 @@ export const steps = [
     desc: '改造 effect 函数，为其增加第二个参数 options。我们将调度器函数 scheduler 放在 options 中，并挂载到生成的 effectFn 上。',
     detail: 'effect(fn, options)\n  ↓\neffectFn.options = options\n  ↓\neffectFn 上携带了调度器信息',
     color: '#10b981',
-    // ⚠️ 6 ~ 14 (若组件从0开始则全减1)
     lines: [5, 6, 7, 8, 9, 10, 11, 12, 13,],
     highlight: { scheduler: true, trigger: false, queue: false },
   },
@@ -128,7 +127,7 @@ export const steps = [
     title: '使用调度器执行',
     label: '挂载调度器',
     desc: '在 effect 的 options 中传入 scheduler 为 queueJob。当数据变化时，trigger 不再直接执行渲染，而是将渲染函数推入队列，等待异步批量执行。',
-    detail: 'effect(renderFn, { scheduler: queueJob })\n  ↓\nstate.count 变化 → trigger\n  ↓\nqueueJob(effectFn) -> 推入队列\n  ↓\n等待微任务执行 flushJob',
+    detail: 'effect(renderFn, { scheduler: queueJob })\n  ↓\nstate.count 变化 → trigger\n  ↓\nqueueJob(effectFn) → 推入队列\n  ↓\n等待微任务执行 flushJob',
     color: '#10b981',
     lines: [71, 72, 73, 74, 75, 76, 77],
     highlight: { scheduler: true, trigger: true, queue: true },
@@ -138,10 +137,9 @@ export const steps = [
     title: '调度结果：去重与批量',
     label: '调度结果',
     desc: '连续修改 state.count 三次，虽然触发了三次 trigger，但通过队列去重，渲染函数只被推入一次，并在微任务中执行一次。实现了性能优化。',
-    detail: 'state.count++ (0→1) -> 推入队列\nstate.count++ (1→2) -> 队列已存在，跳过\nstate.count++ (2→3) -> 队列已存在，跳过\n\n微任务执行：渲染 1 次，结果为 3',
+    detail: 'state.count++ (0→1) → 推入队列\nstate.count++ (1→2) → 队列已存在，跳过\nstate.count++ (2→3) → 队列已存在，跳过\n\n微任务执行：渲染 1 次，结果为 3',
     color: '#10b981',
-    // ⚠️ 85, 86, 87 (若组件从0开始则全减1)
-    lines: [85, 86, 87],
+    lines: [78,79,80,81],
     highlight: { scheduler: true, trigger: true, queue: true },
   },
 ]

@@ -1,127 +1,115 @@
 <template>
-  <div class="demo-layout">
-    <div class="main-grid">
-      <!-- 左栏：代码 + 说明 -->
-      <div class="left-col">
-        <!-- ✅ 替换为公共代码组件，传入源码、高亮行和文件名 -->
-        <CodePanel :sourceCode="sourceCode" :activeLines="store.activeLines" filename="scheduler.js" />
-        <!-- ✅ 替换为公共说明组件，传入当前步骤数据 -->
-        <StepDesc :step="store.currentStepData" />
-      </div>
-      <!-- 右栏：可视化 (完全保持原样) -->
-      <div class="right-col">
-        <!-- 数据状态 -->
-        <div class="viz-card">
-          <div class="viz-head"><i class="fa-solid fa-database"></i><h4>响应式数据</h4></div>
-          <div class="data-box">
-            <div class="d-kw">const state = reactive({</div>
-            <div class="d-prop">
-              <span class="d-key">count</span><span class="d-colon">:</span>
-              <Transition name="fade" mode="out-in">
-                <span class="d-val" :key="store.dataValue">{{ store.dataValue }}</span>
-              </Transition>
-            </div>
-            <div class="d-kw">})</div>
-          </div>
-        </div>
-        <!-- 调度流程图 -->
-        <div class="viz-card">
-          <div class="viz-head"><i class="fa-solid fa-diagram-project"></i><h4>调度流程图</h4></div>
-          <div class="graph">
-            <!-- trigger -->
-            <div class="g-node" :class="{ hl: hl.trigger }">
-              <div class="g-dot" :class="{ on: hl.trigger }"></div>
-              <span class="g-label">trigger()</span>
-              <div class="g-detail">数据变化，准备执行副作用</div>
-            </div>
-            <div class="g-conn" :class="{ active: hl.trigger }"></div>
-            <!-- 判断 -->
-            <div class="g-node diamond" :class="{ hl: hl.scheduler }">
-              <div class="g-dot" :class="{ on: hl.scheduler }"></div>
-              <span class="g-label">是否有 scheduler?</span>
-            </div>
-            <!-- 分支 -->
-            <div class="g-branches">
-              <div class="g-branch no" :class="{ active: hl.scheduler }">
-                <div class="branch-label">No</div>
-                <div class="g-conn-v"></div>
-                <div class="g-node small" :class="{ hl: !hl.scheduler && hl.trigger }">
-                  <span class="g-label">同步执行 fn()</span>
-                  <div class="g-detail bad">连续修改 3 次 → 执行 3 次</div>
-                </div>
-              </div>
-              <div class="g-branch yes" :class="{ active: hl.scheduler }">
-                <div class="branch-label">Yes</div>
-                <div class="g-conn-v"></div>
-                <div class="g-node small queue-node" :class="{ hl: hl.queue }">
-                  <span class="g-label">scheduler(fn)</span>
-                  <div class="queue-box">
-                    <div class="queue-label">JobQueue (Set)</div>
-                    <div class="queue-visual">
-                      <div class="queue-slot" :class="{ filled: store.queueSize >= 1, flushing: store.isFlushing }">
-                        {{ store.queueSize >= 1 ? 'effectFn' : '' }}
-                      </div>
-                    </div>
-                    <div class="queue-meta">去重：相同函数只入队一次</div>
-                  </div>
-                  <div class="g-conn-h"></div>
-                  <div class="g-node small flush-node" :class="{ hl: store.isFlushing }">
-                    <span class="g-label">Promise.then (微任务)</span>
-                    <div class="g-detail good">异步批量执行 → 只渲染 1 次</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- 执行对比 -->
-        <div class="viz-card">
-          <div class="viz-head"><i class="fa-solid fa-code-compare"></i><h4>执行次数对比</h4></div>
-          <div class="compare-grid">
-            <div class="compare-item bad">
-              <div class="compare-label">无调度器</div>
-              <div class="compare-val">{{ store.syncCount }} 次</div>
-            </div>
-            <div class="compare-item good">
-              <div class="compare-label">有调度器</div>
-              <div class="compare-val">{{ store.asyncCount }} 次</div>
-            </div>
-          </div>
-        </div>
-        <!-- 操作区 -->
-        <div class="viz-card action">
-          <button class="inc-btn" :class="{ pulse: store.canIncrement }" @click="store.simulateIncrement()" :disabled="!store.canIncrement || store.isFlushing">
-            <i class="fa-solid fa-layer-group"></i> 连续执行 state.count++ (3次)
-          </button>
-          <div v-if="store.triggerLogs.length" class="logs">
-            <div class="logs-head"><i class="fa-solid fa-clock-rotate-left"></i> 执行日志</div>
-            <TransitionGroup name="fade" tag="div" class="logs-list">
-              <div v-for="(log, i) in store.triggerLogs" :key="log.time + i" class="log-item">
-                <span class="l-idx">#{{ store.triggerLogs.length - i }}</span>
-                <span class="l-bad">同步{{ log.sync }}次</span>
-                <span class="l-arrow">vs</span>
-                <span class="l-good">调度{{ log.async }}次</span>
-                <span class="l-val">= {{ log.value }}</span>
-                <span class="l-time">{{ log.time }}</span>
-              </div>
-            </TransitionGroup>
-          </div>
-          <div v-else class="logs-empty">{{ store.canIncrement ? '点击按钮模拟调度执行' : '完成步骤 6 解锁' }}</div>
-        </div>
-      </div>
-    </div>
-    <!-- 控制栏 -->
-    <div class="controls">
-      <button class="ctrl-btn outline" @click="store.prevStep()" :disabled="store.currentStep <= 1"><i class="fa-solid fa-chevron-left"></i> 上一步</button>
-      <div class="step-tabs">
-        <button v-for="(s, i) in store.steps" :key="i" class="s-tab" :class="{ current: i+1 === store.currentStep }" :disabled="i+1 > store.currentStep" @click="store.goToStep(i+1)">{{ s.label }}</button>
-      </div>
-      <button class="ctrl-btn primary" @click="store.nextStep()" :disabled="store.currentStep >= store.totalSteps">
-        <template v-if="store.currentStep < store.totalSteps">下一步 <i class="fa-solid fa-chevron-right"></i></template>
-        <template v-else>完成 <i class="fa-solid fa-check"></i></template>
-      </button>
-    </div>
-  </div>
+<div class="demo-layout">
+<div class="main-grid">
+<div class="left-col">
+<CodePanel :sourceCode="sourceCode" :activeLines="store.activeLines" filename="scheduler.js" />
+<StepDesc :step="store.currentStepData" />
+</div>
+<div class="right-col">
+<div class="viz-card">
+<div class="viz-head"><i class="fa-solid fa-database"></i><h4>响应式数据</h4></div>
+<div class="data-box">
+<div class="d-kw">const state = reactive({</div>
+<div class="d-prop">
+<span class="d-key">count</span><span class="d-colon">:</span>
+<Transition name="fade" mode="out-in">
+<span class="d-val" :key="store.dataValue">{{ store.dataValue }}</span>
+</Transition>
+</div>
+<div class="d-kw">})</div>
+</div>
+</div>
+<div class="viz-card">
+<div class="viz-head"><i class="fa-solid fa-diagram-project"></i><h4>调度流程图</h4></div>
+<div class="graph">
+<div class="g-node" :class="{ hl: hl.trigger }">
+<div class="g-dot" :class="{ on: hl.trigger }"></div>
+<span class="g-label">trigger()</span>
+<div class="g-detail">数据变化，准备执行副作用</div>
+</div>
+<div class="g-conn" :class="{ active: hl.trigger }"></div>
+<div class="g-node diamond" :class="{ hl: hl.scheduler }">
+<div class="g-dot" :class="{ on: hl.scheduler }"></div>
+<span class="g-label">是否有 scheduler?</span>
+</div>
+<div class="g-branches">
+<div class="g-branch no" :class="{ active: hl.scheduler }">
+<div class="branch-label">No</div>
+<div class="g-conn-v"></div>
+<div class="g-node small" :class="{ hl: !hl.scheduler && hl.trigger }">
+<span class="g-label">同步执行 fn()</span>
+<div class="g-detail bad">连续修改 3 次 → 执行 3 次</div>
+</div>
+</div>
+<div class="g-branch yes" :class="{ active: hl.scheduler }">
+<div class="branch-label">Yes</div>
+<div class="g-conn-v"></div>
+<div class="g-node small queue-node" :class="{ hl: hl.queue }">
+<span class="g-label">scheduler(fn)</span>
+<div class="queue-box">
+<div class="queue-label">JobQueue (Set)</div>
+<div class="queue-visual">
+<div class="queue-slot" :class="{ filled: store.queueSize >= 1, flushing: store.isFlushing }">
+{{ store.queueSize >= 1 ? 'effectFn' : '' }}
+</div>
+</div>
+<div class="queue-meta">去重：相同函数只入队一次</div>
+</div>
+<div class="g-conn-h"></div>
+<div class="g-node small flush-node" :class="{ hl: store.isFlushing }">
+<span class="g-label">Promise.then (微任务)</span>
+<div class="g-detail good">异步批量执行 → 只渲染 1 次</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="viz-card">
+<div class="viz-head"><i class="fa-solid fa-code-compare"></i><h4>累计执行次数对比</h4></div>
+<div class="compare-grid">
+<div class="compare-item bad">
+<div class="compare-label">无调度器</div>
+<div class="compare-val">{{ store.totalSyncCount }} 次</div>
+</div>
+<div class="compare-item good">
+<div class="compare-label">有调度器</div>
+<div class="compare-val">{{ store.totalAsyncCount }} 次</div>
+</div>
+</div>
+</div>
+<div class="viz-card action">
+<button class="inc-btn" :class="{ pulse: store.canIncrement }" @click="store.simulateIncrement()" :disabled="!store.canIncrement || store.isFlushing">
+<i class="fa-solid fa-layer-group"></i> 连续执行 state.count++ (3次)
+</button>
+<div v-if="store.triggerLogs.length" class="logs">
+<div class="logs-head"><i class="fa-solid fa-clock-rotate-left"></i> 执行日志</div>
+<TransitionGroup name="fade" tag="div" class="logs-list">
+<div v-for="(log, i) in store.triggerLogs" :key="log.time + i" class="log-item">
+<span class="l-idx">#{{ i + 1 }}</span>
+<span class="l-bad">+{{ log.sync }}次同步</span>
+<span class="l-arrow">vs</span>
+<span class="l-good">+{{ log.async }}次调度</span>
+<span class="l-val">= {{ log.value }}</span>
+<span class="l-time">{{ log.time }}</span>
+</div>
+</TransitionGroup>
+</div>
+<div v-else class="logs-empty">{{ store.canIncrement ? '点击按钮模拟调度执行' : '完成步骤 6 解锁' }}</div>
+</div>
+</div>
+</div>
+<div class="controls">
+<button class="ctrl-btn outline" @click="store.prevStep()" :disabled="store.currentStep <= 1"><i class="fa-solid fa-chevron-left"></i> 上一步</button>
+<div class="step-tabs">
+<button v-for="(s, i) in store.steps" :key="i" class="s-tab" :class="{ current: i+1 === store.currentStep }" :disabled="i+1 > store.currentStep" @click="store.goToStep(i+1)">{{ s.label }}</button>
+</div>
+<button class="ctrl-btn primary" @click="store.nextStep()" :disabled="store.currentStep >= store.totalSteps">
+<template v-if="store.currentStep < store.totalSteps">下一步 <i class="fa-solid fa-chevron-right"></i></template>
+<template v-else>完成 <i class="fa-solid fa-check"></i></template>
+</button>
+</div>
+</div>
 </template>
 <script setup>
 import { computed } from 'vue' 
