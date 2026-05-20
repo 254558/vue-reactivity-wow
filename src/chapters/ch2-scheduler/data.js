@@ -139,7 +139,7 @@ export const steps = [
     desc: '连续修改 state.count 三次，虽然触发了三次 trigger，但通过队列去重，渲染函数只被推入一次，并在微任务中执行一次。实现了性能优化。',
     detail: 'state.count++ (0→1) → 推入队列\nstate.count++ (1→2) → 队列已存在，跳过\nstate.count++ (2→3) → 队列已存在，跳过\n\n微任务执行：渲染 1 次，结果为 3',
     color: '#10b981',
-    lines: [78,79,80,81],
+    lines: [78, 79, 80, 81],
     highlight: { scheduler: true, trigger: true, queue: true },
   },
 ]

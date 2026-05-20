@@ -7,7 +7,6 @@ const routes = [
     component: () => import('@/views/HomeView.vue'),
   },
   {
-    // 通用章节路由：/chapter/1, /chapter/2 ...
     path: '/chapter/:id',
     name: 'Chapter',
     component: () => import('@/views/ChapterView.vue'),

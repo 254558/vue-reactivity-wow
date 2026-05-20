@@ -1,13 +1,21 @@
 # Vue 是怎么工作的
 
 ## 快速启动
-```bash
-# 安装依赖
-npm i
+正常安装：
 
-# 启动开发服务
+```npm
+npm i
+```
+
+正常启动：
+```npm
 npm run dev
 ```
-![alt text](image-1.png)
-![alt text](image.png)
 
+## fork后提交：
+
+```bash
+git remote add upstream https://github.com/254558/vue-reactivity-demo
+```
+
+点击 `Create pull request` 提交你的代码

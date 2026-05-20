@@ -27,7 +27,7 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 const chapterModule = shallowRef(null)
 
-// 章节映射表：后续新增章节只需在这里添加一行
+// 章节映射表：后续新增章节只需在这里添加
 const chapterMap = {
   '1': {
     Demo: defineAsyncComponent(() => import('@/chapters/ch1-reactivity/Demo.vue')),
