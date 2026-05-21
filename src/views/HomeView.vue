@@ -46,6 +46,47 @@
         </div>
       </section>
 
+      <!-- 调试指南 -->
+      <section class="guide">
+        <h2 class="guide-title">调试指南</h2>
+        <div class="guide-grid">
+          <div class="guide-card sticky-yellow">
+            <h3>开始调试</h3>
+            <ol>
+              <li>用 <strong class="text-chrome">Chrome</strong> 打开页面，按 <kbd>F12</kbd> 打开 DevTools</li>
+              <li>切换到 <strong>Sources</strong> 面板</li>
+              <li>点击章节按钮，<code>debugger</code> 会自动暂停执行</li>
+              <li>看注释说明当前变量值，在 <strong>Scope</strong> 面板中对照验证</li>
+            </ol>
+          </div>
+          <div class="guide-card sticky-green">
+            <h3>步进按钮</h3>
+            <table class="key-table">
+              <tr><td><kbd>F10</kbd></td><td>Step Over</td><td>逐行执行，遇到函数<strong>不进入</strong>，直接拿到返回值</td></tr>
+              <tr><td><kbd>F11</kbd></td><td>Step Into</td><td>逐行执行，遇到函数<strong>进入内部</strong></td></tr>
+              <tr><td><kbd>Shift+F11</kbd></td><td>Step Out</td><td>从当前函数<strong>直接执行完</strong>，回到调用处</td></tr>
+              <tr><td><kbd>F8</kbd></td><td>Resume</td><td>继续运行，直到下一个 <code>debugger</code> 断点</td></tr>
+            </table>
+          </div>
+          <div class="guide-card sticky-blue">
+            <h3>阅读注释</h3>
+            <ul>
+              <li>每个 <code>debugger</code> 上方的注释格式：<code>Scope &gt; 作用域: 变量 = 当前值</code></li>
+              <li>在 DevTools 的 <strong>Scope</strong> 面板中展开对应作用域，验证注释中描述的值</li>
+              <li><strong>Local</strong> = 当前函数的局部变量，<strong>Script</strong> = 全局变量，<strong>Closure</strong> = 闭包变量</li>
+            </ul>
+          </div>
+          <div class="guide-card sticky-pink">
+            <h3>自定义断点</h3>
+            <ul>
+              <li>在 Sources 面板中<strong>点击行号</strong>即可设置/取消断点（蓝色标记）</li>
+              <li>预设的 <code>debugger</code> 覆盖了关键节点，但你可以随时在任意行加断点</li>
+              <li>想看两行 <code>debugger</code> 之间发生了什么？在中间的行点击行号加断点，按 <kbd>F8</kbd> 跳到那里</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
     </div>
   </div>
 </template>
@@ -234,6 +275,181 @@ const chapters = [
 .chapter-card:hover .card-arrow {
   color: var(--card-accent);
   transform: translateX(3px);
+}
+
+/* ===== 调试指南 — 便利贴 ===== */
+.guide {
+  margin-bottom: 3.5rem;
+}
+.guide-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #5e8a76;
+  letter-spacing: 0.1em;
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.1rem;
+}
+.guide-card {
+  position: relative;
+  border-radius: 0;
+  padding: 1.4rem 1.5rem 1.3rem;
+  box-shadow:
+    2px 3px 8px rgba(0,0,0,0.25),
+    inset 0 -2px 4px rgba(0,0,0,0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.guide-card:hover {
+  transform: translateY(-3px) rotate(0deg) !important;
+  box-shadow:
+    3px 6px 18px rgba(0,0,0,0.35),
+    inset 0 -2px 4px rgba(0,0,0,0.06);
+  z-index: 2;
+}
+/* 黄色便利贴 */
+.sticky-yellow {
+  background:
+    linear-gradient(225deg, #070b09 50%, transparent 50%) no-repeat top right / 22px 22px,
+    #fef3c7;
+  transform: rotate(-1.2deg);
+  color: #4a3a1a;
+}
+.sticky-yellow h3 { color: #92400e; }
+.sticky-yellow ol, .sticky-yellow ul { color: #6b4f20; }
+.sticky-yellow strong { color: #3b2a08; }
+.sticky-yellow kbd {
+  color: #92400e;
+  background: rgba(146,64,14,0.1);
+  border-color: #d6b882;
+}
+.sticky-yellow code {
+  color: #92400e;
+  background: rgba(146,64,14,0.1);
+}
+
+/* 绿色便利贴 */
+.sticky-green {
+  background:
+    linear-gradient(225deg, #070b09 50%, transparent 50%) no-repeat top right / 22px 22px,
+    #d1fae5;
+  transform: rotate(0.8deg);
+  color: #14332a;
+}
+.sticky-green h3 { color: #065f46; }
+.sticky-green ol, .sticky-green ul { color: #1a5c44; }
+.sticky-green strong { color: #0a3d2e; }
+.sticky-green kbd {
+  color: #065f46;
+  background: rgba(6,95,70,0.1);
+  border-color: #8dcfb2;
+}
+.sticky-green code {
+  color: #065f46;
+  background: rgba(6,95,70,0.1);
+}
+.sticky-green .key-table td {
+  border-bottom-color: #a7f3d0;
+  color: #1a5c44;
+}
+.sticky-green .key-table td:nth-child(2) { color: #065f46; }
+
+/* 蓝色便利贴 */
+.sticky-blue {
+  background:
+    linear-gradient(225deg, #070b09 50%, transparent 50%) no-repeat top right / 22px 22px,
+    #dbeafe;
+  transform: rotate(-0.6deg);
+  color: #1e2f4a;
+}
+.sticky-blue h3 { color: #1e40af; }
+.sticky-blue ol, .sticky-blue ul { color: #2a4478; }
+.sticky-blue strong { color: #162d5a; }
+.sticky-blue kbd {
+  color: #1e40af;
+  background: rgba(30,64,175,0.1);
+  border-color: #93b8f0;
+}
+.sticky-blue code {
+  color: #1e40af;
+  background: rgba(30,64,175,0.1);
+}
+
+/* 粉色便利贴 */
+.sticky-pink {
+  background:
+    linear-gradient(225deg, #070b09 50%, transparent 50%) no-repeat top right / 22px 22px,
+    #fce7f3;
+  transform: rotate(1deg);
+  color: #4a1a2e;
+}
+.sticky-pink h3 { color: #9d174d; }
+.sticky-pink ol, .sticky-pink ul { color: #7a2d4a; }
+.sticky-pink strong { color: #5a102e; }
+.sticky-pink kbd {
+  color: #9d174d;
+  background: rgba(157,23,77,0.1);
+  border-color: #f0a0c2;
+}
+.sticky-pink code {
+  color: #9d174d;
+  background: rgba(157,23,77,0.1);
+}
+
+/* 便利贴通用排版 */
+.guide-card h3 {
+  font-size: 0.88rem;
+  font-weight: 800;
+  margin-bottom: 0.65rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px dashed rgba(0,0,0,0.1);
+}
+.guide-card ol,
+.guide-card ul {
+  padding-left: 1.2em;
+  font-size: 0.78rem;
+  line-height: 1.8;
+}
+.guide-card ol { list-style: decimal; }
+.guide-card ul { list-style: disc; }
+.guide-card li { margin-bottom: 0.25rem; }
+.guide-card kbd {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  border: 1px solid;
+  padding: 1px 6px;
+  border-radius: 3px;
+  line-height: 1.6;
+}
+.guide-card code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  padding: 0 5px;
+  border-radius: 3px;
+}
+.key-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+}
+.key-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  vertical-align: top;
+  line-height: 1.6;
+}
+.key-table td:first-child {
+  width: 90px;
+  white-space: nowrap;
+}
+.key-table td:nth-child(2) {
+  width: 80px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
 }
 
 /* ===== 响应式 ===== */
