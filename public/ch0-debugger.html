@@ -15,6 +15,7 @@ body {
   align-items: center;
   min-height: 100vh;
   padding: 40px 20px;
+  position: relative;
 }
 .box {
   width: 600px;
@@ -133,9 +134,34 @@ kbd {
   color: #8aaa9a;
 }
 .tip strong { color: #d0e4da; }
+
+/* 可拖拽便利贴样式 */
+.note-sticky {
+  position: fixed;
+  right: 100px;
+  top: 40%;
+  width: 220px;
+  padding: 20px;
+  background: #8caad4;
+  color: #333;
+  box-shadow: 3px 3px 10px rgba(0,0,0,0.3);
+  font-size: 14px;
+  line-height: 1.7;
+  rotate: 3deg;
+  cursor: move;
+  user-select: none;
+  z-index: 999;
+}
 </style>
 </head>
 <body>
+
+<!-- 可拖拽便利贴 -->
+<div class="note-sticky" id="dragNote">
+不知道怎么调试<br>
+就看一下代码文件夹<br>
+里面有视频教程
+</div>
 
 <div class="box">
   <h1>调试入门练习</h1>
@@ -169,6 +195,35 @@ kbd {
 </div>
 
 <script>
+/* ================= 便利贴拖拽功能 ================= */
+const note = document.getElementById('dragNote')
+let isDragging = false
+let offsetX, offsetY
+
+note.addEventListener('mousedown', (e) => {
+  isDragging = true
+  offsetX = e.clientX - note.getBoundingClientRect().left
+  offsetY = e.clientY - note.getBoundingClientRect().top
+  note.style.cursor = 'grabbing'
+})
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDragging) return
+  const x = e.clientX - offsetX
+  const y = e.clientY - offsetY
+  note.style.left = x + 'px'
+  note.style.top = y + 'px'
+  note.style.right = 'auto'
+})
+
+document.addEventListener('mouseup', () => {
+  if (isDragging) {
+    isDragging = false
+    note.style.cursor = 'move'
+  }
+})
+
+/* ================= 其他代码 ================= */
 let allowGreetDebug = false
 
 function log(msg) {
