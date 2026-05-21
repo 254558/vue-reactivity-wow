@@ -82,15 +82,12 @@
 
 <script>
 
-/* ================= reactive ================= */
-
 let activeEffect = null
 const bucket = new Map()
 let state = null
 
 function effect(fn, options = {}) {
   const e = () => {
-    debugger // ① effect执行开始 → 【观察】activeEffect 被赋值，即将执行 fn()
     activeEffect = e
     const res = fn()
     activeEffect = null
@@ -121,11 +118,16 @@ function trigger(t, k) {
   if (!set) return
 
   set.forEach(fn => {
-
-    debugger // ② trigger → 【观察】看 fn.options.scheduler 是否存在
+    // ① trigger 判断执行方式
+    // Scope > Local: fn = 当前 effect，展开 fn.options 看 scheduler 是否存在
+    debugger
 
     if (fn.options.scheduler) {
-      debugger // ③ watch 的 effect 走 scheduler（异步执行，不立即计算）
+      // ② 走 scheduler 分支（watch 的 effect）
+      // Scope > Local: fn.options.scheduler = job 函数
+      // 不会立即重新执行 effect，而是交给 scheduler 异步处理
+      debugger
+
       fn.options.scheduler(fn)
     } else {
       fn()
@@ -136,14 +138,12 @@ function trigger(t, k) {
 const reactiveMap = new WeakMap()
 
 function reactive(obj) {
-  // 已经是 Proxy 的不再包裹
   if (reactiveMap.has(obj)) return reactiveMap.get(obj)
 
   const proxy = new Proxy(obj, {
     get(t, k) {
       track(t, k)
       const val = t[k]
-      // 深响应式：如果值是对象，递归包裹 Proxy
       if (typeof val === 'object' && val !== null) {
         return reactive(val)
       }
@@ -160,25 +160,20 @@ function reactive(obj) {
   return proxy
 }
 
-/* ================= traverse ================= */
-
 let depth = 0
 
 function traverse(val, seen = new Set()) {
-
-  debugger // ④ traverse 开始 → 【观察】val 是什么？深度遍历会递归访问所有属性，触发 track
-  // 注意：depth 会在页面上显示遍历深度
-
   if (typeof val !== 'object' || val === null || seen.has(val)) return
   seen.add(val)
 
   for (const k in val) {
-
     depth++
     document.getElementById('depth').innerText = depth
 
-    debugger // ⑤ 访问属性 → 【观察】当前遍历的 key 是什么？触发 track 会被收集为依赖
-    // 页面上 depth+1 表示进入一层
+    // ③ traverse 正在访问属性
+    // Scope > Block: k = 当前属性名（"count" 或 "nested" 等）
+    // 读取 val[k] 会触发 Proxy get → track，把这个属性收集为依赖
+    debugger
 
     traverse(val[k], seen)
 
@@ -189,20 +184,15 @@ function traverse(val, seen = new Set()) {
   return val
 }
 
-/* ================= watch ================= */
-
 let cbCount = 0
 
 function watch(source, cb) {
-
-  debugger // ⑥ watch 初始化 → 【观察】source 是对象，所以 getter = () => traverse(source)
-  // 目的：通过 traverse 深度遍历所有属性，让每个属性都被 track 收集
-
   let getter
 
   if (typeof source === 'function') {
     getter = source
   } else {
+    // source 是对象 → 用 traverse 深度遍历所有属性
     getter = () => traverse(source)
   }
 
@@ -210,13 +200,14 @@ function watch(source, cb) {
   let newValue
 
   const job = () => {
-
-    debugger // ⑦ scheduler 触发（依赖变化）→ 【观察】执行 runner() 获取新值，然后调用 cb
-    // 新旧值在此处比较
-
     newValue = runner()
     cbCount++
     document.getElementById('cb').innerText = cbCount
+
+    // ④ watch 的 scheduler 触发（依赖变化后）
+    // Scope > Closure: newValue = 重新执行 getter 的结果，oldValue = 上次的结果
+    // 接下来会调用 cb(newValue, oldValue)
+    debugger
 
     cb(newValue, oldValue)
 
@@ -224,22 +215,24 @@ function watch(source, cb) {
   }
 
   const runner = effect(() => {
-
-    debugger // ⑧ watch getter 执行 → 【观察】正在收集依赖（跑 traverse，递归 track 所有属性）
-    // 这样后续任何属性变化都能触发 watch 回调
+    // ⑤ watch 的 effect 执行
+    // Scope > Local: getter = () => traverse(source)
+    // traverse 会递归读取所有属性，每个属性都被 track 收集
+    // 这样后续改 count 或 nested.num 都能触发 watch 回调
+    debugger
 
     return getter()
-
   }, {
     scheduler: job
   })
 
   oldValue = runner()
 
-  debugger // ⑨ 初始值记录完成 → 【观察】oldValue 已保存，后续变化会通过 scheduler 触发
+  // ⑥ watch 初始化完成
+  // Scope > Closure: oldValue = 初始遍历结果
+  // 所有嵌套属性已被 traverse 收集为依赖
+  debugger
 }
-
-/* ================= demo ================= */
 
 function init() {
   state = reactive({
@@ -251,12 +244,16 @@ function init() {
 }
 
 function createWatch() {
+  // ⑦ 创建 watch
+  // Scope > Script: state = Proxy{count:0, nested:Proxy{num:0}}
+  // watch(state, cb) → 内部会 traverse 深度遍历 state 的所有属性
+  debugger
 
-  // 使用 state 对象作为 source → 触发 traverse 深度遍历
   watch(state, (nv, ov) => {
-
-    debugger // ⑪ callback 执行 → 【观察】newValue 和 oldValue 的值，traverse 已收集所有嵌套依赖
-    // 修改 count 或 nested.num 都会触发此回调
+    // ⑧ watch 回调执行
+    // Scope > Local: nv = 新值，ov = 旧值
+    // 无论是改 count 还是 nested.num，traverse 都已收集依赖，都能触发
+    debugger
 
     log(`count: ${state.count}, nested.num: ${state.nested.num}`)
   })
@@ -266,15 +263,20 @@ function createWatch() {
 }
 
 function incCount() {
-  // 【观察】修改 state.count → trigger → watch 的 scheduler 执行 → 回调拿到新旧值
+  // ⑨ 修改 state.count
+  // 按 F8 继续后：set → trigger → watch 的 scheduler → 回调执行
   debugger
+
   state.count++
   document.getElementById('count').innerText = state.count
 }
 
 function incNested() {
-  // 【观察】修改 state.nested.num → 深层属性也被 traverse 收集，同样触发 watch 回调
+  // ⑩ 修改 state.nested.num（深层属性）
+  // 按 F8 继续后：同样触发 trigger → scheduler → 回调
+  // 因为 traverse 深度遍历时也收集了 nested.num 的依赖
   debugger
+
   state.nested.num++
   document.getElementById('nested').innerText = state.nested.num
 }
@@ -287,6 +289,5 @@ function log(msg) {
 }
 
 </script>
-
 </body>
 </html>

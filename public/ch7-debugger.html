@@ -161,14 +161,7 @@
 
 <script>
 
-/* =========================
-   VNode创建
-========================= */
-
 function h(type, props, children) {
-
-  debugger // [VNode] h函数入口 → 【观察】参数 type/props/children，即将组装成 VNode 对象
-
   const vnode = {
     type,
     props: props || {},
@@ -176,89 +169,79 @@ function h(type, props, children) {
     el: null
   }
 
-  debugger // [VNode] 创建完成 → 【观察】vnode 对象结构：type/props/children/el（此时 el=null）
-  // el 暂时为 null，挂载后 el 会指向真实 DOM
+  // ① VNode 创建完成
+  // Scope > Local: vnode = {type, props, children, el:null}
+  // el 暂时为 null，挂载后会指向真实 DOM
+  debugger
 
   return vnode
 }
 
-/* =========================
-   mount流程
-========================= */
-
 function mountElement(vnode, container) {
-
-  debugger // [mount] 进入挂载流程 → 【观察】vnode 结构、container 容器
-  // 五步流程：create → props → children → cache → append
-
   /* 1. createElement */
   const el = document.createElement(vnode.type)
-  // 页面「create」步骤高亮
-
   updateStep('create')
 
-  debugger // [create] → 【观察】DOM 元素已创建（el），但尚未插入文档
+  // ② DOM 元素已创建
+  // Scope > Local: el = 新创建的 DOM 元素（如 <div>），但还没设置属性和子节点
+  debugger
 
   /* 2. props */
   const props = vnode.props
 
   if (props && Object.keys(props).length) {
-
-    debugger // [props] → 【观察】开始设置属性（如 id="app"、class="container"）
-
     for (const key in props) {
       el.setAttribute(key, props[key])
     }
 
-    debugger // [props] → 【观察】属性设置完成，看 el 的 attributes
+    // ③ 属性设置完成
+    // Scope > Local: el 的 attributes 已更新（如 id="app", class="container"）
+    debugger
   }
 
   updateStep('props')
 
   /* 3. children */
   if (typeof vnode.children === 'string') {
-
-    debugger // [children] 文本节点 → 【观察】直接设置 textContent
-
     el.textContent = vnode.children
 
+    // ④ 文本子节点已设置
+    // Scope > Local: el.textContent = vnode.children
+    debugger
+
   } else if (Array.isArray(vnode.children)) {
-
-    debugger // [children] 递归子节点 → 【观察】对每个 child 递归调用 mountElement
-
     vnode.children.forEach(child => {
       mountElement(child, el)
     })
 
-    debugger // [children] 子节点全部挂载完成
+    // ⑤ 子节点全部挂载完成
+    // Scope > Local: el 现在包含了所有子元素
+    debugger
   }
 
   updateStep('children')
 
   /* 4. cache */
   vnode.el = el
-
-  debugger // [cache] → 【观察】vnode.el 从 null 变为真实的 DOM 引用
-
   updateStep('cache')
+
+  // ⑥ 缓存 DOM 引用
+  // Scope > Local: vnode.el = el（从 null 变为真实 DOM 引用）
+  debugger
 
   /* 5. append */
   container.appendChild(el)
-
   updateStep('append')
 
-  debugger // [append] → 【观察】DOM 已插入页面！可在 Elements 面板中查看
+  // ⑦ DOM 已插入页面
+  // Scope > Local: container 中已有新元素，可在 Elements 面板查看
+  debugger
 }
-
-/* =========================
-   UI流程控制
-========================= */
 
 let vnodeTree = null
 let container = null
 
 function updateStep(step) {
-
   const steps = ['create','props','children','cache','append']
   const idx = steps.indexOf(step)
 
@@ -271,12 +254,7 @@ function updateStep(step) {
   })
 }
 
-/* =========================
-   VNode展示
-========================= */
-
 function renderVNode(vn, indent=0) {
-
   const pad = '  '.repeat(indent)
 
   let html = ''
@@ -305,10 +283,6 @@ function updateVNodeView() {
   document.getElementById('vnodeVis').innerHTML = renderVNode(vnodeTree)
 }
 
-/* =========================
-   按钮逻辑
-========================= */
-
 function setup() {
   container = document.getElementById('mountTarget')
   document.getElementById('vnodeBtn').disabled = false
@@ -316,9 +290,9 @@ function setup() {
 }
 
 function createVNode() {
-
-  debugger // [VNode] 开始构建树 → 【观察】递归调用 h() 创建 VNode 树
+  // ⑧ 开始构建 VNode 树
   // 结构：div > p("Hello") + span("Vue")
+  debugger
 
   vnodeTree = h('div',
     { id:'app', class:'container' },
@@ -329,33 +303,30 @@ function createVNode() {
   )
 
   updateVNodeView()
-
   document.getElementById('mountBtn').disabled = false
 
-  debugger // [VNode] 树创建完成 → 【观察】vnodeTree 是嵌套的对象结构
+  // ⑨ VNode 树创建完成
+  // Scope > Script: vnodeTree = 嵌套对象，div > [p, span]，每个节点的 el 仍是 null
+  debugger
 
   log('VNode创建完成')
 }
 
 function mountVNode() {
-
-  debugger // [mount] 开始挂载流程 → 【观察】将 vnodeTree 渲染为真实 DOM
-  // 遵循五步流程：create → props → children → cache → append
+  // ⑩ 开始挂载
+  // 将 vnodeTree 递归渲染为真实 DOM，遵循五步流程
+  debugger
 
   document.getElementById('mountTarget').innerHTML = ''
-
   mountElement(vnodeTree, container)
-
   updateVNodeView()
 
-  debugger // [mount] 完整流程结束 → 【观察】页面已显示渲染内容，vnode.el 已指向真实 DOM
+  // ⑪ 挂载完成
+  // Scope > Script: vnodeTree.el 指向真实 DOM，页面已显示渲染内容
+  debugger
 
   log('挂载完成')
 }
-
-/* =========================
-   log
-========================= */
 
 function log(msg){
   document.getElementById('log').innerHTML =

@@ -432,18 +432,9 @@
 
 <script>
 
-/* ======================================================
-   全局状态
-====================================================== */
-
 let parentInstance = null
 let childInstance = null
-
 let domContainer = null
-
-/* ======================================================
-   UI 辅助
-====================================================== */
 
 function log(msg){
   const t = new Date().toLocaleTimeString()
@@ -452,13 +443,11 @@ function log(msg){
 }
 
 function activeStep(id){
-
   document.querySelectorAll('.step').forEach(el=>{
     el.className='step done'
   })
 
   const target = document.getElementById(id)
-
   if(target){
     target.className='step active'
   }
@@ -471,7 +460,6 @@ function resetSteps(){
 }
 
 function updateUI(){
-
   document.getElementById('parentCount').innerText =
     parentInstance?.setupState.count ?? 0
 
@@ -493,176 +481,129 @@ function flash(el, cls='active'){
   },700)
 }
 
-/* ======================================================
-   h()
-====================================================== */
-
 function h(type, props, children){
-
-  debugger // h() 创建 VNode → 【观察】参数 type/props/children 组装成 VNode 对象
-
-  return {
+  const vnode = {
     type,
     props: props || {},
     children,
     el:null
   }
+
+  // ① VNode 已创建
+  // Scope > Local: vnode = {type, props, children, el:null}
+  // el 暂时为 null，挂载后会指向真实 DOM
+  debugger
+
+  return vnode
 }
 
-/* ======================================================
-   创建组件实例
-====================================================== */
-
 function createComponentInstance(vnode){
-
-  debugger // ① createComponentInstance → 【观察】右侧「create instance」步骤高亮
-  // 看 vnode.type 是什么（ParentComponent 还是 ChildComponent）
-
   activeStep('s1')
 
   const instance = {
-
     vnode,
-
     type:vnode.type,
-
     props:vnode.props || {},
-
     setupState:{},
-
     render:null,
-
     subTree:null,
-
     isMounted:false
-
   }
 
-  debugger // → 【观察】instance 结构：props/setupState/render/subTree 都还是空
+  // ② 组件实例已创建
+  // Scope > Local: instance = {vnode, type, props, setupState:{}, render:null, subTree:null, isMounted:false}
+  // props/setupState/render/subTree 都还是空，等待 setup 填充
+  debugger
 
   return instance
 }
 
-/* ======================================================
-   setupComponent
-====================================================== */
-
 function setupComponent(instance){
-
-  debugger // ② setupComponent → 【观察】右侧「setupComponent」步骤高亮
-  // 即将执行组件的 setup() 函数，初始化 setupState
-
   activeStep('s2')
 
   const Component = instance.type
-
   const setupResult = Component.setup(instance.props)
 
-  debugger // → 【观察】setup() 执行结束，setupResult 包含组件的响应式状态
+  // ③ setup() 执行完毕
+  // Scope > Local: setupResult = setup() 返回值（如 {count:0}）
+  debugger
 
   instance.setupState = setupResult
-
   instance.render = Component.render.bind(instance)
 
-  debugger // → 【观察】render 函数已绑定到 instance，setupState 已就绪
+  // ④ render 已绑定到 instance
+  // Scope > Local: instance.setupState = setupResult，instance.render = 绑定后的 render 函数
+  debugger
 }
 
-/* ======================================================
-   mountComponent
-====================================================== */
-
 function mountComponent(vnode, container){
-
-  debugger // mountComponent 开始 → 【观察】整体流程：createInstance → setup → render → mount
-
   const instance = createComponentInstance(vnode)
-
   setupComponent(instance)
 
-  debugger // ③ render() → 【观察】右侧「render()」步骤高亮
-  // 即将执行 instance.render() 生成虚拟 DOM 子树
-
   activeStep('s3')
-
   const subTree = instance.render()
 
-  debugger // → 【观察】render() 返回 VNode subTree（如 div 元素）
+  // ⑤ render() 返回了 subTree
+  // Scope > Local: subTree = VNode（如 {type:'div', children:'Parent Count: 0'}）
+  debugger
 
   instance.subTree = subTree
-
   activeStep('s4')
 
-  debugger // ④ 开始 mount subTree → 【观察】右侧「create subTree」步骤高亮
-  // 将 VNode 递归挂载为真实 DOM
-
   mountElement(subTree, container)
-
   instance.isMounted = true
 
   return instance
 }
 
-/* ======================================================
-   mountElement
-====================================================== */
-
 function mountElement(vnode, container){
-
-  debugger // ⑤ mountElement → 【观察】右侧「mountElement」步骤高亮
-  // 根据 vnode.type 创建 DOM 元素
-
   activeStep('s5')
 
   const el = document.createElement(vnode.type)
-
   vnode.el = el
 
   if(typeof vnode.children === 'string'){
-
-    debugger // → 【观察】文本 children 直接赋值 textContent
-
     el.textContent = vnode.children
+
+    // ⑥ DOM 元素已创建，文本已设置
+    // Scope > Local: el = 真实 DOM 元素，el.textContent = vnode.children
+    debugger
   }
 
   container.appendChild(el)
 
-  debugger // → 【观察】DOM append 完成，页面已显示此元素
+  // ⑦ DOM 已 append 到容器
+  // 页面上可以看到渲染结果
+  debugger
 }
 
-/* ======================================================
-   patch
-====================================================== */
-
 function patch(n1, n2){
-
-  debugger // ⑥ patch → 【观察】右侧「patch」步骤高亮
-  // n1 = 旧 subTree, n2 = 新 subTree，对比差异并更新 DOM
-
   activeStep('s6')
 
   const el = n2.el = n1.el
 
-  debugger // → 【观察】拿到旧 DOM 引用，对比 n1.children 和 n2.children
+  // ⑧ patch 拿到旧 DOM 引用
+  // Scope > Local: el = 复用的旧 DOM 元素，n1.children = 旧内容，n2.children = 新内容
+  debugger
 
   if(n1.children !== n2.children){
-
-    debugger // children 不同 → 【观察】更新 DOM 内容（textContent）
-
     el.textContent = n2.children
+
+    // ⑨ children 不同 → DOM 已更新
+    // Scope > Local: el.textContent = n2.children（新内容）
+    debugger
   }
 
-  debugger // → 【观察】patch 完成，DOM 已更新
+  // ⑩ patch 完成
+  // DOM 内容已更新，页面已刷新
+  debugger
 }
 
-/* ======================================================
-   Parent Component
-====================================================== */
-
 const ParentComponent = {
-
   setup(){
-
-    debugger // Parent setup() → 【观察】初始化父组件的响应式状态 { count: 0 }
+    // ⑪ Parent setup()
+    // Scope > Local: 无参数，返回 {count:0} 作为 setupState
+    debugger
 
     return {
       count:0
@@ -670,12 +611,12 @@ const ParentComponent = {
   },
 
   render(){
-
-    debugger // Parent render() → 【观察】生成 VNode，页面中 parentRender 标记为「render 执行」
-    // 对比：this.setupState.count 会反映在生成的 subTree 中
-
     document.getElementById('parentRender').innerText =
       'render 执行'
+
+    // ⑫ Parent render()
+    // Scope > Local: this.setupState.count 的值反映在生成的 subTree 中
+    debugger
 
     return h(
       'div',
@@ -685,15 +626,11 @@ const ParentComponent = {
   }
 }
 
-/* ======================================================
-   Child Component
-====================================================== */
-
 const ChildComponent = {
-
   setup(props){
-
-    debugger // Child setup() → 【观察】props 参数接收父组件传入的 { title: "Hello Parent" }
+    // ⑬ Child setup()
+    // Scope > Local: props = {title:"Hello Parent"}（父组件传入的）
+    debugger
 
     return {
       count:50
@@ -701,12 +638,12 @@ const ChildComponent = {
   },
 
   render(){
-
-    debugger // Child render() → 【观察】使用 this.props.title 和 this.setupState.count 生成 VNode
-    // 页面中 childRender 标记为「render 执行」
-
     document.getElementById('childRender').innerText =
       'render 执行'
+
+    // ⑭ Child render()
+    // Scope > Local: this.props.title 和 this.setupState.count 生成 VNode
+    debugger
 
     return h(
       'div',
@@ -716,18 +653,10 @@ const ChildComponent = {
   }
 }
 
-/* ======================================================
-   初始化
-====================================================== */
-
 function setup(){
-
-  debugger // 初始化系统 → 【观察】准备组件容器，解锁「挂载组件」按钮
-
   resetSteps()
 
   domContainer = document.getElementById('domRoot')
-
   domContainer.innerHTML = 'DOM 尚未挂载'
 
   document.getElementById('setupBtn').disabled = true
@@ -746,23 +675,16 @@ mountElement()
 `
   )
 
+  // ⑮ 初始化完成
+  // 接下来点击「挂载组件」，会依次创建 Parent → Child 组件
+  debugger
+
   log('初始化完成')
 }
 
-/* ======================================================
-   挂载
-====================================================== */
-
 function mountApp(){
-
-  debugger // → 【观察】开始挂载应用，先挂载 ParentComponent，再挂载 ChildComponent
-  // 每个组件经历：createInstance → setup → render → mountElement
-
   document.getElementById('mountBtn').disabled = true
-
   domContainer.innerHTML = ''
-
-  /* Parent */
 
   const parentVNode = {
     type:ParentComponent,
@@ -772,9 +694,10 @@ function mountApp(){
   parentInstance =
     mountComponent(parentVNode, domContainer)
 
-  /* Child */
-
-  debugger // → 【观察】Parent 已挂载，现在创建 Child VNode（带 props.title）
+  // ⑯ Parent 已挂载，准备创建 Child
+  // Scope > Script: parentInstance.setupState = {count:0}
+  // 接下来创建 Child VNode，带 props.title = "Hello Parent"
+  debugger
 
   document.getElementById('propsFlow')
     .classList.add('flow')
@@ -814,33 +737,29 @@ ChildComponent
 `
   )
 
+  // ⑰ 两个组件都挂载完成
+  // Scope > Script: parentInstance, childInstance 都已就绪
+  debugger
+
   log('组件挂载完成')
 }
 
-/* ======================================================
-   父组件更新
-====================================================== */
-
 function parentUpdate(){
-
-  debugger // → 【观察】父组件更新：state.count++，然后重新 render 生成新 subTree
-  // 父组件闪烁紫色表示 patching
-
   flash(document.getElementById('parentComp'),'patching')
 
   parentInstance.setupState.count++
 
-  debugger // → 【观察】重新执行 Parent render()，生成新的 VNode subTree
-
   const prevTree = parentInstance.subTree
-
   const nextTree = parentInstance.render()
 
   parentInstance.subTree = nextTree
 
   patch(prevTree, nextTree)
 
-  debugger // → 【观察】patch 完成！Child props 未变化 → 子组件跳过更新（变灰）
+  // ⑱ 父组件更新完成
+  // Scope > Script: parentInstance.setupState.count 已 +1
+  // Child props 未变化 → 子组件跳过更新（变灰表示）
+  debugger
 
   document.getElementById('childComp')
     .classList.add('skipped')
@@ -870,27 +789,22 @@ Child props 没变
   log(`父组件更新 count = ${parentInstance.setupState.count}`)
 }
 
-/* ======================================================
-   子组件自更新
-====================================================== */
-
 function childUpdate(){
-
-  debugger // → 【观察】子组件内部更新（只更新自己，不影响父组件）
-
   flash(document.getElementById('childComp'),'patching')
 
   childInstance.setupState.count++
 
-  debugger // → 【观察】Child render() 执行，生成新的 subTree
-
   const prevTree = childInstance.subTree
-
   const nextTree = childInstance.render()
 
   childInstance.subTree = nextTree
 
   patch(prevTree,nextTree)
+
+  // ⑲ 子组件自更新完成
+  // Scope > Script: childInstance.setupState.count 已 +1
+  // 只更新子组件自身，父组件不会重新 render
+  debugger
 
   updateUI()
 
@@ -909,15 +823,7 @@ patch()
   log(`子组件更新 count = ${childInstance.setupState.count}`)
 }
 
-/* ======================================================
-   修改 props
-====================================================== */
-
 function changeProps(){
-
-  debugger // → 【观察】Parent 修改 Child 的 props → 子组件需要重新 render + patch
-  // 注意 propsFlow 显示的变化
-
   flash(document.getElementById('parentComp'),'patching')
 
   document.getElementById('propsFlow')
@@ -928,7 +834,10 @@ function changeProps(){
   childInstance.props.title =
     'New Props ' + Math.floor(Math.random()*100)
 
-  debugger // → 【观察】props 已改变！Child 必须重新 render（与父组件更新时子组件跳过的区别）
+  // ⑳ props 已改变
+  // Scope > Script: childInstance.props.title = 新值
+  // Child 必须重新 render（与父组件更新时子组件跳过形成对比）
+  debugger
 
   const nextTree = childInstance.render()
 

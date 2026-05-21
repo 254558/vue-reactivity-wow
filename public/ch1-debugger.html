@@ -78,32 +78,29 @@
 </div>
 
 <script>
-/* ================= 响应式核心 ================= */
 
 let activeEffect = null
 const bucket = new Map()
 let state = null
 
 function effect(fn) {
-  // ① 进入 effect → 【观察】activeEffect 即将被赋值为 fn
-  debugger
-
   activeEffect = fn
 
-  // ② 执行 fn → 触发 get → 进入 track（看下一行的 debugger 在 get 里）
+  // ① activeEffect 已赋值
+  // Scope > Script: activeEffect = fn（就是下面传进来的箭头函数）
+  debugger
+
   fn()
 
-  // ③ fn 执行完，依赖已收集完成 → 【观察】activeEffect 已置 null（依赖收集阶段结束）
   activeEffect = null
 
+  // ② effect 执行结束
+  // Scope > Script: activeEffect = null，bucket 里已收集好依赖
+  // 展开 bucket > [[Entries]] > 0 > [1] > [[Entries]] 可以看到 target → key → Set 的结构
   debugger
 }
 
-/* 依赖收集：发生在 get 之后 */
 function track(target, key) {
-  // ④ 进入 track → 【观察】activeEffect 是否为 fn（非空说明在 effect 内）
-  debugger
-
   if (!activeEffect) return
 
   let depsMap = bucket.get(target)
@@ -118,62 +115,63 @@ function track(target, key) {
     depsMap.set(key, deps)
   }
 
-  // ⑤ 建立：target → key → effect
   deps.add(activeEffect)
 
-  // → 【观察】在 Scope 中展开 bucket，看 target → key → Set[effect] 的结构
+  // ③ 依赖收集完成
+  // Scope > Local: key = "count"（当前收集的是哪个属性）
+  // Scope > Script: 展开 bucket > [[Entries]]，能看到 target → "count" → Set(fn) 的结构
   debugger
 }
 
-/* 触发更新：发生在 set 之后 */
 function trigger(target, key) {
-  // ⑥ 数据发生变化 → 【观察】从 bucket 中取出 deps，看哪些 effect 将被执行
-  debugger
-
   const depsMap = bucket.get(target)
   if (!depsMap) return
 
   const deps = depsMap.get(key)
   if (!deps) return
 
+  // ④ 数据变化，取出依赖
+  // Scope > Local: key = "count"，deps = Set(1)（里面存着需要重新执行的 effect）
+  debugger
+
   deps.forEach(fn => {
-    // ⑦ 重新执行 effect → 【观察】执行栈回到 effect 函数，将再次触发 get→track 流程
+    // ⑤ 重新执行 effect
+    // Scope > Local: fn 就是最初传给 effect 的箭头函数
+    // 注意：fn() 不是 effect()，所以 activeEffect 是 null，不会重新 track
     debugger
+
     fn()
   })
 }
 
-/* Proxy 响应式 */
 function reactive(data) {
   return new Proxy(data, {
     get(target, key) {
-      // ⑧ get → 【观察】key 是什么？即将进入 track 收集依赖
-      debugger
-
       track(target, key)
+
+      // ⑥ Proxy get 拦截
+      // Scope > Local: key = "count"（正在读取的属性名）
+      // track 已执行，依赖已收集
+      debugger
 
       return target[key]
     },
 
     set(target, key, val) {
-      // ⑨ set → 【观察】数据即将被修改，随后调用 trigger 通知所有依赖
-      debugger
-
       target[key] = val
-
       trigger(target, key)
+
+      // ⑦ Proxy set 拦截
+      // Scope > Local: key = "count"，val = 新值
+      // target[key] 已修改，trigger 已执行，effect 已重新运行
+      debugger
 
       return true
     }
   })
 }
 
-/* ================= 初始化 ================= */
-
 function setup() {
-  // → 【观察】创建 reactive({ count: 0 })，然后执行 effect 建立依赖收集
-  debugger
-
   document.getElementById('setupBtn').disabled = true
 
   state = reactive({ count: 0 })
@@ -182,21 +180,29 @@ function setup() {
     document.getElementById('num').innerText = state.count
   })
 
+  // ⑧ 初始化完成
+  // Scope > Script: state = Proxy{count: 0}，bucket 里已有 "count" 的依赖
+  debugger
+
   document.getElementById('addBtn').disabled = false
   document.getElementById('reduceBtn').disabled = false
 }
 
-/* ================= 操作 ================= */
-
 function add() {
-  // → 【观察】state.count++ 会触发 setter → trigger → 重新执行 effect 更新页面
+  // ⑨ 点击 +1
+  // Scope > Script: state.count 当前值
+  // 按 F8 继续后会触发 set → trigger → fn() → 页面数字 +1
   debugger
+
   state.count++
 }
 
 function reduce() {
-  // → 【观察】效果同上，递减操作触发相同的响应式流程
+  // ⑩ 点击 -1
+  // Scope > Script: state.count 当前值
+  // 按 F8 继续后会触发 set → trigger → fn() → 页面数字 -1
   debugger
+
   state.count--
 }
 </script>

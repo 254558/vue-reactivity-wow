@@ -105,7 +105,7 @@ button:disabled { opacity:0.4; }
 </div>
 
 <script>
-/* ===== 响应式系统（无栈版本 - 有问题）===== */
+
 let activeEffect = null
 let effectStack = []
 const bucket = new Map()
@@ -120,30 +120,27 @@ function effectWithoutStack(fn) {
   return effectFn
 }
 
-/* ===== 改进版 effect（带栈 - 正确版本）===== */
 function effectWithStack(fn) {
   const effectFn = () => {
-
-    // ===== 进入 effect =====
-    debugger // → 【观察】effectStack 即将 push，activeEffect 将指向当前 effectFn
-    // 看右侧 UI 面板中栈的变化
-
     effectStack.push(effectFn)
     activeEffect = effectFn
     updateStackDisplay()
 
-    debugger // → 【观察】effectStack 已更新，activeEffect 指向栈顶元素
+    // ① effect 入栈完成
+    // Scope > Script: activeEffect = 当前 effectFn，effectStack 刚 push 了新元素
+    // 页面上的栈可视化已更新
+    debugger
 
     fn()
-
-    // ===== effect 执行结束 =====
-    debugger // → 【观察】即将出栈（关键回退点），出栈后 activeEffect 恢复为父级
 
     effectStack.pop()
     activeEffect = effectStack[effectStack.length - 1] || null
     updateStackDisplay()
 
-    debugger // → 【观察】出栈完成，activeEffect 已恢复为外层 effect（或 null）
+    // ② effect 出栈完成
+    // Scope > Script: activeEffect 恢复为外层 effect（或 null）
+    // 栈顶弹出后，activeEffect 自动回退到栈中上一个元素 — 这就是 effectStack 的核心
+    debugger
   }
 
   effectFn()
@@ -192,14 +189,12 @@ function reactive(data) {
 
 let effect1, effect2
 
-/* ===== UI 更新 ===== */
 function updateStackDisplay() {
   const el = document.getElementById('stackVis')
 
   if (effectStack.length === 0 && !effect1) {
     el.innerHTML = '<div class="stack-item inactive">（空）</div>'
   } else if (effectStack.length === 0 && effect1) {
-    // 栈为空但 effect 已注册
     el.innerHTML = `
       <div class="stack-item inactive">[注册] effect1 ${effect1._name ? '✓' : ''}</div>
       <div class="stack-item inactive">[注册] effect2 ${effect2?._name ? '✓' : ''}</div>
@@ -220,7 +215,6 @@ function updateStackDisplay() {
     activeEffect ? (activeEffect._name || 'effect') : 'null'
 }
 
-/* ===== 初始化 ===== */
 function setup() {
   document.getElementById('setupBtn').disabled = true
   state = reactive({ text: 'Hello' })
@@ -229,52 +223,52 @@ function setup() {
   log('初始化完成')
 }
 
-/* ===== 创建嵌套 effect ===== */
 function createEffects() {
-
-  debugger // → 【观察】开始创建嵌套 effect，看 effectStack 如何动态变化
+  // ③ 创建嵌套 effect
+  // Scope > Script: state = Proxy{text:"Hello"}
+  // 接下来 effect1 嵌套 effect2，看 effectStack 如何动态变化
+  debugger
 
   document.getElementById('effectBtn').disabled = true
 
   effect1 = effectWithStack(() => {
-
-    debugger // → 【观察】effect1 执行开始（外层），栈中只有 effect1
+    // ④ effect1 执行（外层）
+    // Scope > Script: effectStack = [effect1]，activeEffect = effect1
+    debugger
 
     document.getElementById('textVal').innerText = `"${state.text}"`
     updateDisplay()
 
     effect2 = effectWithStack(() => {
-
-      debugger // → 【观察】effect2 执行开始（内层嵌套），栈中有 [effect1, effect2]
-      // activeEffect = effect2，effect1 被压在栈底，不会丢失
+      // ⑤ effect2 执行（内层嵌套）
+      // Scope > Script: effectStack = [effect1, effect2]，activeEffect = effect2
+      // effect1 被压在栈底，不会丢失
+      debugger
 
       document.getElementById('textVal').innerText = `"${state.text}"`
       updateDisplay()
-
-      debugger // → 【观察】effect2 即将出栈，出栈后 activeEffect 恢复为 effect1
-
     })
 
     effect2._name = 'effect2'
 
-    debugger // → 【观察】effect2 已出栈，activeEffect 恢复为 effect1（正确！）
+    // ⑥ effect2 已出栈
+    // Scope > Script: effectStack = [effect1]，activeEffect = effect1（正确回退！）
+    debugger
 
   })
 
   effect1._name = 'effect1'
-
-  // 刷新栈显示（effect 执行完后 _name 才赋值）
   updateStackDisplay()
 
   document.getElementById('problemBtn').disabled = false
   log('嵌套 effect 已创建（effectStack版本）')
 }
 
-/* ===== 覆盖问题演示 ===== */
 function showProblem() {
-
-  debugger // → 【观察】演示无栈版本的 activeEffect 覆盖问题（没有 effectStack）
-  // 下面的 oldEffect 没有栈机制，嵌套时会直接覆盖 oldActive
+  // ⑦ 演示无栈版本的 activeEffect 覆盖问题
+  // 接下来用一套独立的 oldEffect/oldTrack/oldReactive，没有 effectStack
+  // 看嵌套时 activeEffect 如何被内层覆盖
+  debugger
 
   document.getElementById('problemBtn').disabled = true
   log('--- 无栈版本：activeEffect 覆盖问题 ---')
@@ -331,42 +325,48 @@ function showProblem() {
 
   const oldState = oldReactive({ text: 'Hello' })
 
-  debugger // → 【观察】effect1 开始执行，oldActive 设为 effect1
+  // ⑧ 无栈版本：准备执行 effect1
+  // Scope > Script: oldActive = null（还没进入 oldEffect，进入后会被赋值为 effect1）
+  debugger
 
   oldEffect(() => {
-
-    debugger // → 【观察】oldActive = effect1，读取 oldState.text
+    // ⑨ 读取 oldState.text，依赖收集到 effect1
+    // Scope > Script: oldActive = effect1，看起来正确
+    debugger
 
     const _ = oldState.text
 
     oldEffect(() => {
-
-      debugger // → 【观察】问题！oldActive 被 effect2 覆盖（effect1 丢失了）
-      // 此时 effect2 中的 get 会正确收集，但 effect1 后续的 get 会被错误收集到 effect2
+      // ⑩ 问题！oldActive 被 effect2 覆盖
+      // Scope > Script: oldActive = effect2，effect1 的引用已丢失
+      debugger
 
       const _2 = oldState.text
 
     })
 
-    debugger // → 【观察】回到 effect1，但 oldActive 仍然是 effect2（被污染了！）
-    // 下面这行本应收集到 effect1，但实际收集到了 effect2
+    // ⑪ 回到 effect1，但 oldActive 仍然是 effect2（被污染！）
+    // Scope > Script: oldActive = effect2（应该是 effect1！）
+    // 下面读取 oldState.text 会错误收集到 effect2
+    debugger
 
     const _3 = oldState.text
 
   })
 
-  debugger // → 【观察】问题结束：第三个 oldState.text 的依赖被错误关联到 effect2
-  // 点击「EffectStack 解决」切换到正确版本对比
+  // ⑫ 问题总结
+  // Scope > Script: 展开 oldBucket，第三个 oldState.text 的依赖被错误关联到 effect2
+  // 这就是没有 effectStack 的 bug
+  debugger
 
   log('问题：无栈导致 activeEffect 被覆盖')
   document.getElementById('solutionBtn').disabled = false
 }
 
-/* ===== 解决方案 ===== */
 function showSolution() {
-
-  debugger // → 【观察】切换到 effectStack 正确模型，前面的 effect1/effect2 已经用栈解决了覆盖问题
-  // 现在可以点击「修改数据」测试 trigger 时 activeEffect 的正确行为
+  // ⑬ 切换回 effectStack 正确模型
+  // 前面的 effect1/effect2 已经用栈解决了覆盖问题，可以点击「修改数据」验证
+  debugger
 
   document.getElementById('solutionBtn').disabled = true
   document.getElementById('changeBtn').disabled = false
@@ -374,19 +374,16 @@ function showSolution() {
   log('使用 effectStack：解决嵌套覆盖问题')
 }
 
-/* ===== 修改数据 ===== */
 function changeText() {
-
-  debugger // → 【观察】setter → trigger，看 effectStack 中两个 effect 如何被同步执行
+  // ⑭ 修改 state.text
+  // 按 F8 继续后：set → trigger → 两个 effect 都被正确执行
+  debugger
 
   state.text = 'World'
-
   updateDisplay()
-
   log(`state.text → "World"`)
 }
 
-/* ===== UI ===== */
 function updateDisplay() {
   if (!state) return
   document.getElementById('textVal').innerText = `"${state.text}"`

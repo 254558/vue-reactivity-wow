@@ -92,8 +92,6 @@
 
 <script>
 
-/* ================= 响应式基础 ================= */
-
 let activeEffect = null
 const bucket = new Map()
 let state = null
@@ -103,25 +101,20 @@ let asyncRenderCount = 0
 
 function effect(fn, options = {}) {
   const effectFn = () => {
-
-    // ① effect 执行开始 → 【观察】activeEffect 被赋值为 effectFn，然后执行 fn()
-    debugger
-
     activeEffect = effectFn
-
     fn()
 
-    activeEffect = null
-
-    // ② effect 执行结束 → 【观察】activeEffect 已置空
+    // ① effect 执行完毕
+    // Scope > Script: activeEffect 仍指向 effectFn（还没清空）
     debugger
+
+    activeEffect = null
   }
 
   effectFn.options = options
   effectFn()
 }
 
-/* track：依赖收集（get阶段） */
 function track(target, key) {
   if (!activeEffect) return
 
@@ -140,7 +133,6 @@ function track(target, key) {
   deps.add(activeEffect)
 }
 
-/* trigger：派发更新（set阶段） */
 function trigger(target, key) {
   const depsMap = bucket.get(target)
   if (!depsMap) return
@@ -149,26 +141,27 @@ function trigger(target, key) {
   if (!effects) return
 
   effects.forEach(fn => {
-
-    // ③ trigger：准备执行 effect → 【观察】看 fn.options.scheduler 是否存在
+    // ② trigger 判断执行方式
+    // Scope > Local: fn = 当前 effect，展开 fn.options 看 scheduler 是否存在
     debugger
 
     if (fn.options.scheduler) {
-
-      // ④ 有调度器 → 进入 queueJob → 【观察】不走直接执行，而是交给调度器
+      // ③ 有 scheduler → 走异步调度分支
+      // Scope > Local: fn.options.scheduler = queueJob
+      // fn 不会立即执行，而是交给 scheduler 排队
       debugger
+
       fn.options.scheduler(fn)
-
     } else {
-
-      // ⑤ 无调度器 → 直接同步执行 → 【观察】同步 effect 立即执行 fn()
+      // ④ 无 scheduler → 同步执行
+      // Scope > Local: fn.options 中没有 scheduler
+      // fn 立即执行，页面马上更新
       debugger
+
       fn()
     }
   })
 }
-
-/* ================= Proxy ================= */
 
 function reactive(data) {
   return new Proxy(data, {
@@ -184,53 +177,54 @@ function reactive(data) {
   })
 }
 
-/* ================= 调度器 ================= */
-
 const jobQueue = new Set()
 const p = Promise.resolve()
+let isFlushing = false
 
-function flushJob() {
+function queueJob(fn) {
+  jobQueue.add(fn)
 
-  // ⑥ 微任务开始执行 → 【观察】jobQueue 中的 job 被批量执行（页面只更新一次）
+  // ⑤ job 已入队
+  // Scope > Script: 展开 jobQueue > [[Entries]]，里面有 1 个 fn
+  // Set 自动去重：同一个 fn 多次 add 只保留一个
   debugger
 
+  if (!isFlushing) {
+    isFlushing = true
+    p.then(flushJob)
+  }
+
+  // ⑥ 微任务已注册
+  // Scope > Script: isFlushing = true，后续 trigger 不会重复注册 flushJob
+  debugger
+}
+
+function flushJob() {
   const jobs = [...jobQueue]
   jobQueue.clear()
+  isFlushing = false
+
+  // ⑦ 微任务开始批量执行
+  // Scope > Local: jobs = 从队列中取出的 effect 数组
+  // 无论 trigger 了几次，jobQueue 去重后只会有 1 个 job → 页面只更新 1 次
+  debugger
 
   jobs.forEach(fn => {
     fn()
   })
 }
 
-function queueJob(fn) {
-
-  // ⑦ job 入队 → 【观察】jobQueue.add(fn)，Set 自动去重，多次触发只保留一个
-  debugger
-
-  jobQueue.add(fn)
-
-  // ⑧ 只注册一次微任务 → 【观察】p.then(flushJob)，同一 tick 多次 trigger 只注册一次
-  p.then(flushJob)
-}
-
-/* ================= 初始化 ================= */
-
 function setup() {
-  // → 【观察】创建 reactive state，注册两个 effect（一个同步、一个带 scheduler 异步）
-  debugger
-
   document.getElementById('setupBtn').disabled = true
 
   state = reactive({ count: 0 })
 
-  /* 同步 effect */
   effect(() => {
     document.getElementById('num').innerText = state.count
     syncRenderCount++
     document.getElementById('syncCount').innerText = syncRenderCount
   })
 
-  /* 异步 effect（带 scheduler） */
   effect(() => {
     document.getElementById('num').innerText = state.count
     asyncRenderCount++
@@ -239,15 +233,19 @@ function setup() {
     scheduler: queueJob
   })
 
+  // ⑧ 初始化完成
+  // Scope > Script: state = Proxy{count:0}
+  // bucket 中 "count" 对应的 Set 里有 2 个 effect（1 个同步、1 个带 scheduler）
+  debugger
+
   document.getElementById('syncBtn').disabled = false
   document.getElementById('asyncBtn').disabled = false
 }
 
-/* ================= 对比测试 ================= */
-
 function changeSync() {
-
-  // 【观察】每次 state.count++ 都立即 trigger → 同步 effect 执行 3 次（同步渲染 +3）
+  // ⑨ 同步修改 x3
+  // 按 F8 继续：3 次 state.count++ → 3 次 trigger → 同步 effect 执行 3 次
+  // 观察页面上「同步渲染」计数 +3
   debugger
 
   state.count++
@@ -256,8 +254,10 @@ function changeSync() {
 }
 
 function changeAsync() {
-
-  // 【观察】3 次 trigger 但 scheduler 去重 → 只入队 1 次 → microtask 只渲染 1 次
+  // ⑩ 调度器修改 x3
+  // 按 F8 继续：3 次 state.count++ → 3 次 trigger → 但 scheduler 去重
+  // jobQueue 只有 1 个 job → 微任务只渲染 1 次
+  // 观察页面上「调度器渲染」计数只 +1
   debugger
 
   state.count++

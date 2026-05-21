@@ -76,15 +76,12 @@
 
 <script>
 
-/* ================= reactive基础 ================= */
-
 let activeEffect = null
 const bucket = new Map()
 let state = null
 
 function effect(fn, options = {}) {
   const e = () => {
-    debugger // ① effect执行开始 → 【观察】activeEffect 即将赋值，然后执行 getter
     activeEffect = e
     const res = fn()
     activeEffect = null
@@ -115,11 +112,16 @@ function trigger(target, key) {
   if (!deps) return
 
   deps.forEach(fn => {
-
-    debugger // ② trigger → 【观察】看 fn.options.scheduler 是否存在
+    // ① trigger 判断执行方式
+    // Scope > Local: fn = 当前 effect，展开 fn.options 看 scheduler 是否存在
+    debugger
 
     if (fn.options.scheduler) {
-      debugger // ③ computed 的 effect 走 scheduler（只标 dirty，不重新计算）
+      // ② 走 scheduler 分支（computed 的 effect）
+      // Scope > Local: fn.options.scheduler 存在
+      // 不会重新执行 getter，只标记 dirty=true（懒计算）
+      debugger
+
       fn.options.scheduler(fn)
     } else {
       fn()
@@ -138,55 +140,53 @@ function reactive(obj) {
   })
 }
 
-/* ================= computed ================= */
-
 function computed(getter) {
-
   let dirty = true
   let value
   let callCount = 0
 
   const runner = effect(getter, {
     scheduler() {
-
-      // ④ 依赖变化 → 【观察】不执行计算逻辑，只标记 dirty = true（懒计算）
-      debugger
-
       dirty = true
       document.getElementById('dirty').innerText = 'true'
+
+      // ③ scheduler 被调用（依赖变化时）
+      // Scope > Closure: dirty = true（刚被标记），value 是旧缓存值
+      // 注意：没有执行 getter！下次读取 .value 时才会重新计算
+      debugger
     }
   })
 
   return {
     get value() {
-
-      debugger // ⑤ 读取 computed.value → 【观察】看 dirty 是 true 还是 false
+      // ④ 读取 computed.value
+      // Scope > Closure: dirty = true 或 false
+      // dirty=true → 走计算分支，dirty=false → 走缓存分支
+      debugger
 
       if (dirty) {
-
-        debugger // ⑥ dirty = true → 重新计算，执行 runner()
-        // 【观察】执行后 dirty 变 false，下次读取直接走缓存
-
         value = runner()
         callCount++
-
         document.getElementById('calls').innerText = callCount
 
         dirty = false
         document.getElementById('dirty').innerText = 'false'
 
-        debugger // ⑦ 计算完成 → 【观察】dirty 已置 false，getter执行次数 +1
-      } else {
+        // ⑤ 计算完成
+        // Scope > Closure: dirty = false，value = 新计算的值，callCount +1
+        debugger
 
-        debugger // ⑧ 命中缓存 → 【观察】dirty = false，直接返回上次缓存值，getter 不执行
+      } else {
+        // ⑥ 命中缓存
+        // Scope > Closure: dirty = false，直接返回上次缓存的 value
+        // getter 不执行 — 这就是 computed 的性能优化
+        debugger
       }
 
       return value
     }
   }
 }
-
-/* ================= demo ================= */
 
 let c = null
 
@@ -198,6 +198,12 @@ function init() {
   c = computed(() => {
     return state.count * 2
   })
+
+  // ⑦ 初始化完成
+  // Scope > Script: state = Proxy{count:0}，c = computed 对象
+  // 注意：dirty 仍然是 true！effect 初始化只是收集了依赖，并没有计算 value
+  // 要等第一次读取 c.value 时才会执行 getter 并缓存结果
+  debugger
 
   document.getElementById('r1').disabled = false
   document.getElementById('r2').disabled = false
@@ -213,29 +219,40 @@ function render(computedValue) {
 }
 
 function read1() {
-  // 首次读取 computed → 【观察】dirty = true，走进计算分支，执行 getter 后缓存
+  // ⑧ 首次读取 computed.value
+  // Scope > Script: dirty = true（还没读取过 .value）
+  // 按 F8 继续后：c.value 进入 getter → dirty=true → 走计算分支 → 执行 runner() → 缓存结果
   debugger
+
   const v = c.value
   render(v)
 }
 
 function read2() {
-  // 再次读取 computed → 【观察】dirty = false，直接命中缓存，getter 不执行
+  // ⑨ 再次读取 computed.value
+  // Scope > Script: dirty 仍然是 false → 命中缓存，getter 不执行
   debugger
+
   const v = c.value
   render(v)
 }
 
 function inc() {
-  // 修改 state.count → 【观察】触发 setter → trigger → computed 的 scheduler 将 dirty 标为 true
+  // ⑩ 修改 state.count
+  // 按 F8 继续后：set → trigger → computed 的 scheduler → dirty 变 true
+  // 但此时不会重新计算！要等到下次读取 .value 才算
   debugger
+
   state.count++
   render()
 }
 
 function read3() {
-  // 修改后读取 → 【观察】dirty 又变 true，重新计算并缓存
+  // ⑪ 修改后读取 computed.value
+  // Scope > Script: dirty = true（被 scheduler 标记了）→ 走计算分支
+  // runner() 重新执行 getter，得到新值
   debugger
+
   const v = c.value
   render(v)
 }

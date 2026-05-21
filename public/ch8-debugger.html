@@ -162,6 +162,11 @@
       color: #60a5fa;
     }
 
+    .op.remove {
+      border-color: #ef4444;
+      color: #ef4444;
+    }
+
     .op.none {
       border-color: #10b981;
       color: #10b981;
@@ -280,10 +285,6 @@
 
 <script>
 
-/* =========================
-   Diff 数据
-========================= */
-
 const oldChildren = ['A', 'B', 'C', 'D']
 const newChildren = ['D', 'A', 'C', 'E', 'B']
 
@@ -294,25 +295,15 @@ let newEndIdx
 
 let ops = []
 
-/* =========================
-   渲染 children
-========================= */
-
 function renderCells() {
-
   const oldEl = document.getElementById('oldCells')
   const newEl = document.getElementById('newCells')
 
   oldEl.innerHTML = oldChildren.map((item, i) => {
-
     let cls = 'cell'
-
     if (i === oldStartIdx) cls += ' start'
     if (i === oldEndIdx) cls += ' end'
-
-    if (i < oldStartIdx || i > oldEndIdx) {
-      cls += ' removed'
-    }
+    if (i < oldStartIdx || i > oldEndIdx) cls += ' removed'
 
     return `
       <div class="${cls}">
@@ -323,15 +314,10 @@ function renderCells() {
   }).join('')
 
   newEl.innerHTML = newChildren.map((item, i) => {
-
     let cls = 'cell'
-
     if (i === newStartIdx) cls += ' start'
     if (i === newEndIdx) cls += ' end'
-
-    if (i < newStartIdx || i > newEndIdx) {
-      cls += ' removed'
-    }
+    if (i < newStartIdx || i > newEndIdx) cls += ' removed'
 
     return `
       <div class="${cls}">
@@ -342,12 +328,7 @@ function renderCells() {
   }).join('')
 }
 
-/* =========================
-   DOM操作展示
-========================= */
-
 function renderOps() {
-
   const el = document.getElementById('opsList')
 
   if (ops.length === 0) {
@@ -364,46 +345,28 @@ function renderOps() {
   }).join('')
 }
 
-/* =========================
-   compare 信息
-========================= */
-
 function renderCompare(msg) {
   document.getElementById('compareBox').innerHTML = msg
 }
 
-/* =========================
-   核心 Diff
-========================= */
-
 function patchStep() {
-
-  debugger // [Diff] 开始新一轮 while → 【观察】四个指针的当前位置
-  // 蓝色边框 = start，黄色边框 = end，灰色 = 已处理
-
   if (
     oldStartIdx > oldEndIdx ||
     newStartIdx > newEndIdx
   ) {
+    // ① 指针越界 → while 循环结束
+    // Scope > Script: oldStartIdx > oldEndIdx 或 newStartIdx > newEndIdx
+    // 进入剩余节点处理阶段
+    debugger
 
-    debugger // [End] 指针越界 → 【观察】任意一组指针交叉，Diff 结束
-
-    renderCompare('✓ Diff 完成')
-
-    document.getElementById('stepBtn').disabled = true
-    document.getElementById('autoBtn').disabled = true
-
+    handleRemaining()
     return false
   }
 
   const oldS = oldChildren[oldStartIdx]
   const oldE = oldChildren[oldEndIdx]
-
   const newS = newChildren[newStartIdx]
   const newE = newChildren[newEndIdx]
-
-  debugger // [Compare] 四指针比较 → 【观察】对比框中的四指针值，看哪种匹配命中
-  // 比较顺序：头-头 → 尾-尾 → 头-尾 → 尾-头 → 查找复用
 
   renderCompare(`
     oldStart = ${oldS}<br>
@@ -412,14 +375,8 @@ function patchStep() {
     newEnd = ${newE}
   `)
 
-  /* =========================
-     1. 头-头
-  ========================= */
-
+  /* 1. 头-头 */
   if (oldS === newS) {
-
-    debugger // [Hit] 头-头匹配 → 【观察】oldStart === newStart，两指针同时右移
-
     ops.push({
       type: 'none',
       msg: `头-头匹配：${oldS} 不移动`
@@ -428,20 +385,17 @@ function patchStep() {
     oldStartIdx++
     newStartIdx++
 
+    // ② 头-头匹配
+    // Scope > Local: oldS === newS，两指针同时右移，节点不需要移动
+    debugger
+
     renderCells()
     renderOps()
-
     return true
   }
 
-  /* =========================
-     2. 尾-尾
-  ========================= */
-
+  /* 2. 尾-尾 */
   if (oldE === newE) {
-
-    debugger // [Hit] 尾-尾匹配 → 【观察】oldEnd === newEnd，两指针同时左移
-
     ops.push({
       type: 'none',
       msg: `尾-尾匹配：${oldE} 不移动`
@@ -450,20 +404,17 @@ function patchStep() {
     oldEndIdx--
     newEndIdx--
 
+    // ③ 尾-尾匹配
+    // Scope > Local: oldE === newE，两指针同时左移，节点不需要移动
+    debugger
+
     renderCells()
     renderOps()
-
     return true
   }
 
-  /* =========================
-     3. 头-尾
-  ========================= */
-
+  /* 3. 头-尾 */
   if (oldS === newE) {
-
-    debugger // [Move] oldStart → newEnd → 【观察】oldStart 匹配 newEnd，需要将元素移动到尾部
-
     ops.push({
       type: 'move',
       msg: `移动 ${oldS} 到尾部`
@@ -472,20 +423,17 @@ function patchStep() {
     oldStartIdx++
     newEndIdx--
 
+    // ④ 头-尾匹配
+    // Scope > Local: oldS === newE，旧头部移到尾部位置
+    debugger
+
     renderCells()
     renderOps()
-
     return true
   }
 
-  /* =========================
-     4. 尾-头
-  ========================= */
-
+  /* 4. 尾-头 */
   if (oldE === newS) {
-
-    debugger // [Move] oldEnd → newStart → 【观察】oldEnd 匹配 newStart，需要将元素移动到头部
-
     ops.push({
       type: 'move',
       msg: `移动 ${oldE} 到头部`
@@ -494,18 +442,16 @@ function patchStep() {
     oldEndIdx--
     newStartIdx++
 
+    // ⑤ 尾-头匹配
+    // Scope > Local: oldE === newS，旧尾部移到头部位置
+    debugger
+
     renderCells()
     renderOps()
-
     return true
   }
 
-  /* =========================
-     5. 查找复用
-  ========================= */
-
-  debugger // [Lookup] 四指针都不匹配 → 【观察】遍历旧 children，看 newStart 能否复用
-
+  /* 5. 查找复用 */
   const idxInOld = oldChildren.findIndex(
     (item, i) => {
       return (
@@ -517,41 +463,68 @@ function patchStep() {
   )
 
   if (idxInOld > -1) {
-
-    debugger // [Reuse] 找到可复用的旧节点 → 【观察】旧索引 idxInOld，节点移动复用
-
     ops.push({
       type: 'move',
       msg: `复用 ${newS}（旧索引 ${idxInOld}）`
     })
 
+    // ⑥ 找到可复用的旧节点
+    // Scope > Local: idxInOld = 在旧 children 中的索引，newS 被移动复用
+    debugger
+
   } else {
-
-    debugger // [Add] 旧中没有此节点 → 【观察】这是新增节点，需要创建
-
     ops.push({
       type: 'add',
       msg: `新增节点 ${newS}`
     })
+
+    // ⑦ 旧中没有此节点 → 新增
+    // Scope > Local: idxInOld = -1，newS 是全新节点
+    debugger
   }
 
   newStartIdx++
 
   renderCells()
   renderOps()
-
   return true
 }
 
-/* =========================
-   初始化
-========================= */
+function handleRemaining() {
+  if (oldStartIdx > oldEndIdx) {
+    for (let i = newStartIdx; i <= newEndIdx; i++) {
+      ops.push({
+        type: 'add',
+        msg: `新增节点 ${newChildren[i]}`
+      })
+    }
+
+    // ⑧ 旧节点用完 → 新增剩余节点
+    // Scope > Script: newStartIdx 到 newEndIdx 之间的节点都是新增的
+    // 例如节点 E 就是这个阶段被添加的
+    debugger
+
+  } else if (newStartIdx > newEndIdx) {
+    for (let i = oldStartIdx; i <= oldEndIdx; i++) {
+      ops.push({
+        type: 'remove',
+        msg: `删除节点 ${oldChildren[i]}`
+      })
+    }
+
+    // ⑨ 新节点用完 → 删除多余旧节点
+    // Scope > Script: oldStartIdx 到 oldEndIdx 之间的节点都需要删除
+    debugger
+  }
+
+  renderOps()
+  renderCompare('✓ Diff 完成')
+
+  document.getElementById('stepBtn').disabled = true
+  document.getElementById('autoBtn').disabled = true
+}
 
 function setup() {
-
-  debugger // [Init] 初始化 → 【观察】四指针归位：oldStart=0, oldEnd=3, newStart=0, newEnd=4
-  // 旧: A B C D，新: D A C E B
-
   document.getElementById('setupBtn').disabled = true
 
   oldStartIdx = 0
@@ -570,6 +543,10 @@ function setup() {
     新 children：D A C E B
   `)
 
+  // ⑩ 初始化完成
+  // Scope > Script: oldStartIdx=0, oldEndIdx=3, newStartIdx=0, newEndIdx=4
+  debugger
+
   document.getElementById('stepBtn').disabled = false
   document.getElementById('autoBtn').disabled = false
   document.getElementById('resetBtn').disabled = false
@@ -577,13 +554,10 @@ function setup() {
   log('Diff 初始化完成')
 }
 
-/* =========================
-   单步执行
-========================= */
-
 function diffStep() {
-
-  debugger // [Step] 手动执行 → 【观察】每点一次执行一轮 while，看指针和操作变化
+  // ⑪ 手动单步执行
+  // 每点一次执行一轮 while，看指针和操作变化
+  debugger
 
   const ok = patchStep()
 
@@ -594,13 +568,10 @@ function diffStep() {
   }
 }
 
-/* =========================
-   自动执行
-========================= */
-
 function diffAll() {
-
-  debugger // [Auto] 自动执行全部 → 【观察】一次性跑完所有 while 循环，看完整流程
+  // ⑫ 自动执行全部
+  // 一次性跑完所有 while 循环，看完整 Diff 流程
+  debugger
 
   document.getElementById('stepBtn').disabled = true
   document.getElementById('autoBtn').disabled = true
@@ -610,31 +581,19 @@ function diffAll() {
   log('全部 Diff 执行完成')
 }
 
-/* =========================
-   重置
-========================= */
-
 function resetDiff() {
-
-  debugger // [Reset] 重置 → 【观察】恢复初始状态，重新开始
+  // ⑬ 重置
+  // 恢复初始状态，重新开始
+  debugger
 
   document.getElementById('setupBtn').disabled = false
-
   setup()
-
   log('已重置')
 }
 
-/* =========================
-   log
-========================= */
-
 function log(msg) {
-
   const area = document.getElementById('logArea')
-
   const time = new Date().toLocaleTimeString()
-
   area.innerHTML =
     `[${time}] ${msg}<br>` +
     area.innerHTML
