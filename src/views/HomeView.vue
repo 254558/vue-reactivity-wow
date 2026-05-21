@@ -93,6 +93,7 @@
 
 <script setup>
 const chapters = [
+  { id: 0, title: '调试入门', desc: '从零学会 Chrome DevTools 调试：Step Over、Step Into、调用栈、Resume。', tags: ['F10', 'F11', 'Scope', 'CallStack'], steps: 5, color: '#6b7280' },
   { id: 1, title: '响应式系统', desc: '从 Proxy 到依赖收集与触发，理解 Vue 响应式数据的底层基石。', tags: ['Proxy', 'effect', 'track', 'trigger'], steps: 3, color: '#10b981' },
   { id: 2, title: '调度系统', desc: '调度器如何控制副作用的执行时机与去重，避免无限递归。', tags: ['scheduler', 'queue', 'batch'], steps: 3, color: '#10b981' },
   { id: 3, title: '计算属性', desc: '懒执行与缓存机制，脏标记（dirty flag）的工作过程。', tags: ['computed', 'cache', 'lazy'], steps: 5, color: '#10b981' },
@@ -312,9 +313,7 @@ const chapters = [
 }
 /* 黄色便利贴 */
 .sticky-yellow {
-  background:
-    linear-gradient(225deg, #070b09 50%, transparent 50%) no-repeat top right / 22px 22px,
-    #fef3c7;
+  background: #fef3c7;
   transform: rotate(-1.2deg);
   color: #4a3a1a;
 }
@@ -333,9 +332,7 @@ const chapters = [
 
 /* 绿色便利贴 */
 .sticky-green {
-  background:
-    linear-gradient(225deg, #070b09 50%, transparent 50%) no-repeat top right / 22px 22px,
-    #d1fae5;
+  background: #d1fae5;
   transform: rotate(0.8deg);
   color: #14332a;
 }
@@ -359,9 +356,7 @@ const chapters = [
 
 /* 蓝色便利贴 */
 .sticky-blue {
-  background:
-    linear-gradient(225deg, #070b09 50%, transparent 50%) no-repeat top right / 22px 22px,
-    #dbeafe;
+  background: #dbeafe;
   transform: rotate(-0.6deg);
   color: #1e2f4a;
 }
@@ -380,9 +375,7 @@ const chapters = [
 
 /* 粉色便利贴 */
 .sticky-pink {
-  background:
-    linear-gradient(225deg, #070b09 50%, transparent 50%) no-repeat top right / 22px 22px,
-    #fce7f3;
+  background: #fce7f3;
   transform: rotate(1deg);
   color: #4a1a2e;
 }

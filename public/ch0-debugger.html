@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vue Debugger 入门练习</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: system-ui, sans-serif;
+  background: #070b09;
+  color: #d0e4da;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+.box {
+  width: 600px;
+  background: #0d1612;
+  border: 1px solid #1a2e25;
+  border-radius: 12px;
+  padding: 40px;
+  text-align: center;
+}
+h1 {
+  font-size: 1.3rem;
+  margin-bottom: 4px;
+}
+.subtitle {
+  color: #5e8a76;
+  font-size: 0.78rem;
+  margin-bottom: 20px;
+}
+.visual {
+  background: #0a100d;
+  border: 1px solid #1a2e25;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 18px;
+  text-align: left;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  line-height: 1.8;
+  min-height: 80px;
+}
+.visual .label { color: #5e8a76; }
+.visual .val { color: #10b981; }
+.visual .highlight { color: #f59e0b; }
+.visual .code-line { color: #8b9caa; padding-left: 12px; border-left: 2px solid #1a2e25; margin: 4px 0; }
+.visual .code-line.current { border-left-color: #10b981; color: #d0e4da; }
+
+.flow-vis {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin: 10px 0;
+  flex-wrap: wrap;
+}
+.flow-step {
+  font-size: 0.65rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(7,11,9,0.5);
+  border: 1px solid #1a2e25;
+  color: #5e8a76;
+}
+.flow-step.active {
+  border-color: #10b981;
+  color: #10b981;
+  background: rgba(16,185,129,0.08);
+}
+.flow-step.done {
+  opacity: 0.35;
+}
+
+.btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 16px 0;
+}
+button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+button:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn1 { background: #6b7280; }
+.btn2 { background: #2563eb; }
+.btn3 { background: #7c3aed; }
+.btn4 { background: #dc2626; }
+.btn5 { background: #10b981; }
+
+.log {
+  margin-top: 14px;
+  background: #070b09;
+  border: 1px solid #1a2e25;
+  border-radius: 6px;
+  padding: 12px;
+  font-family: monospace;
+  font-size: 0.72rem;
+  text-align: left;
+  line-height: 1.8;
+  max-height: 120px;
+  overflow: auto;
+}
+kbd {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: #10b981;
+  background: rgba(16,185,129,0.1);
+  border: 1px solid #1a2e25;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.tip {
+  background: rgba(16,185,129,0.06);
+  border: 1px solid rgba(16,185,129,0.15);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  font-size: 0.72rem;
+  text-align: left;
+  line-height: 1.7;
+  color: #8aaa9a;
+}
+.tip strong { color: #d0e4da; }
+</style>
+</head>
+<body>
+
+<div class="box">
+
+  <h1>调试入门练习</h1>
+  <p class="subtitle">第 0 章 · 先学会走路，再开始跑步</p>
+
+  <!-- 代码可视化 -->
+  <div class="visual" id="codeVis">
+    <div class="label">代码执行位置</div>
+    <div id="currentLine" style="margin-top:8px;color:#5e8a76">等待开始…</div>
+  </div>
+
+  <!-- 执行流程 -->
+  <div class="flow-vis" id="flowVis">
+    <span class="flow-step" id="f1">变量赋值</span>
+    <span class="flow-step" id="f2">函数调用</span>
+    <span class="flow-step" id="f3">Scope 面板</span>
+    <span class="flow-step" id="f4">调用栈</span>
+  </div>
+
+  <!-- 按钮 -->
+  <div class="btns">
+    <button class="btn1" id="startBtn" onclick="start()">开始</button>
+    <button class="btn2" id="stepBtn" onclick="doStepOver()" disabled>2. 试 Step Over <kbd>F10</kbd></button>
+    <button class="btn3" id="intoBtn" onclick="doStepInto()" disabled>3. 试 Step Into <kbd>F11</kbd></button>
+    <button class="btn4" id="stackBtn" onclick="doCallStack()" disabled>4. 看调用栈</button>
+    <button class="btn5" id="resumeBtn" onclick="doResume()" disabled>5. 试 Resume <kbd>F8</kbd></button>
+  </div>
+
+  <!-- 提示 -->
+  <div class="tip" id="tipBox">
+    <strong>第一步</strong>：点「开始」按钮，然后看怎么操作
+  </div>
+
+  <!-- 日志 -->
+  <div class="log" id="logArea">等待开始…</div>
+
+</div>
+
+<script>
+
+let stepCount = 0
+let resumeCount = 0
+
+function log(msg) {
+  const area = document.getElementById('logArea')
+  const t = new Date().toLocaleTimeString()
+  area.innerHTML = `[${t}] ${msg}<br>` + area.innerHTML
+}
+
+function showCode(line, desc) {
+  document.getElementById('currentLine').innerHTML =
+    `<span class="highlight">→</span> ${desc}`
+}
+
+function tip(msg) {
+  document.getElementById('tipBox').innerHTML = msg
+}
+
+function activeFlow(id) {
+  document.querySelectorAll('.flow-step').forEach(el => {
+    if (el.id === id) el.className = 'flow-step active'
+    else el.className = 'flow-step done'
+  })
+}
+
+function greet(name) {
+  // Scope > Local: name = 传入的参数，比如 "Debugger"
+  // 按 F11 进入后，看 Scope > Local 面板
+  debugger
+
+  const msg = 'Hello, ' + name
+
+  // Scope > Local: msg = "Hello, Debugger"，是拼接后的结果
+  debugger
+
+  return msg
+}
+
+function deepFunc(level) {
+  // Scope > Local: level = 当前的递归层数（3 → 2 → 1 → 0）
+  // 同时看 Call Stack 面板：deepFunc 会出现多次，每层一次
+  debugger
+
+  if (level > 0) {
+    return deepFunc(level - 1) + 1
+  }
+
+  return 0
+}
+
+function start() {
+  document.getElementById('startBtn').disabled = true
+
+  activeFlow('f1')
+  showCode('step1', '变量声明与赋值')
+  tip('按 <kbd>F10</kbd>（Step Over）逐行执行，看右侧 Scope > Local 中的变量变化')
+
+  // ① 从这里开始
+  // Scope > Script: 只有 script 级别的变量
+  // 按 F10 执行下一行，观察 Scope > Local 中出现 a
+  debugger
+
+  const a = 1
+  const b = 2
+  const c = a + b
+
+  // ② 赋值完成
+  // Scope > Local: a=1, b=2, c=3
+  // 在 DevTools Scope > Local 面板中确认这三个值
+  debugger
+
+  document.getElementById('stepBtn').disabled = false
+  document.getElementById('intoBtn').disabled = false
+
+  log('基本变量练习完成 ✓')
+}
+
+function doStepOver() {
+  activeFlow('f2')
+  document.getElementById('stepBtn').disabled = true
+  showCode('step2', 'Step Over 跳过函数')
+
+  // ③ 接下来要用 F10
+  // 调用 greet("StepOver")，如果按 F10 会直接拿到返回值，不会进入 greet 内部
+  // 如果你想进 greet 内部看执行过程，应该按 F11（Step Into）
+  debugger
+
+  const result = greet('StepOver')
+
+  // ④ greet 已返回（F10 跳过了内部，直接得到结果）
+  // Scope > Local: result = "Hello, StepOver"
+  // 刚才没有进入 greet 内部——这就是 F10（Step Over）的行为
+  debugger
+
+  log(`Step Over 练习完成：result = ${result}`)
+  document.getElementById('stackBtn').disabled = false
+}
+
+function doStepInto() {
+  activeFlow('f3')
+  document.getElementById('intoBtn').disabled = true
+  showCode('step3', 'Step Into 进入函数')
+
+  tip('试试按 <kbd>F11</kbd> 进入 greet 内部，对比刚才 F10 的体验')
+
+  // ⑤ 这次试 Step Into
+  // 按 F11（Step Into）进入 greet("StepInto") 内部，观察里面的局部变量
+  // 对比刚才用 F10 直接跳过的区别
+  debugger
+
+  const result = greet('StepInto')
+
+  // ⑥ 如果你按 F11 进入了 greet，在里面执行完再回到这里
+  // Scope > Local: result = "Hello, StepInto"
+  // 体会 F10 和 F11 的区别
+  debugger
+
+  log(`Step Into 练习完成：result = ${result}`)
+}
+
+function doCallStack() {
+  activeFlow('f4')
+  document.getElementById('stackBtn').disabled = true
+  showCode('step4', '递归调用堆栈')
+
+  tip('按 <kbd>F11</kbd> 进入 deepFunc，然后在 Call Stack 面板中观察函数调用顺序的堆叠')
+
+  // ⑦ 接下来看调用栈
+  // 调用 deepFunc(3) 会递归 4 次
+  // 按 F11 进入 deepFunc，看 Call Stack 面板中 deepFunc 一层层叠加
+  debugger
+
+  const val = deepFunc(3)
+
+  // ⑧ deepFunc 执行完毕，调用栈已清空
+  // Scope > Local: val = 3（递归计算结果）
+  debugger
+
+  log(`调用栈练习完成：deepFunc(3) = ${val}`)
+  document.getElementById('resumeBtn').disabled = false
+}
+
+function doResume() {
+  showCode('step5', '多个断点 + Resume')
+
+  // ⑨ 接下来连续遇到多个 debugger
+  // 按 F8（Resume）直接跳到下一个 debugger，不用反复按 F10
+  debugger
+
+  let x = 1
+  x = x * 2
+
+  // ⑩ 第一个暂停
+  // Scope > Local: x = 2
+  debugger
+
+  x = x * 3
+
+  // ⑪ 第二个暂停
+  // Scope > Local: x = 6
+  debugger
+
+  x = x * 4
+
+  // ⑫ 第三个暂停
+  // Scope > Local: x = 24
+  debugger
+
+  const final = x
+
+  // ⑬ 最终结果
+  // Scope > Local: final = 24, x = 24
+  debugger
+
+  log('Resume 练习完成 ✓')
+  tip('全部练习已结束！现在去第 1 章学习 Vue 响应式系统吧 🎉')
+  document.getElementById('resumeBtn').disabled = true
+}
+
+</script>
+
+</body>
+</html>

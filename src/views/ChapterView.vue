@@ -25,6 +25,7 @@ import ChapterFrame from '@/components/ChapterFrame.vue'
 const route = useRoute()
 
 const chapters = {
+  '0': { url: '/ch0-debugger.html', title: '调试入门：DevTools 基础操作' },
   '1': { url: '/ch1-debugger.html', title: '响应式系统：reactive 与 effect' },
   '2': { url: '/ch2-debugger.html', title: '调度系统：scheduler' },
   '3': { url: '/ch3-debugger.html', title: '计算属性：computed' },
