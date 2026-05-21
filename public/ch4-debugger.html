@@ -90,7 +90,7 @@ let state = null
 
 function effect(fn, options = {}) {
   const e = () => {
-    debugger // ① effect执行开始
+    debugger // ① effect执行开始 → 【观察】activeEffect 被赋值，即将执行 fn()
     activeEffect = e
     const res = fn()
     activeEffect = null
@@ -122,10 +122,10 @@ function trigger(t, k) {
 
   set.forEach(fn => {
 
-    debugger // ② trigger触发
+    debugger // ② trigger → 【观察】看 fn.options.scheduler 是否存在
 
     if (fn.options.scheduler) {
-      debugger // ③ watch走scheduler（异步更新）
+      debugger // ③ watch 的 effect 走 scheduler（异步执行，不立即计算）
       fn.options.scheduler(fn)
     } else {
       fn()
@@ -166,7 +166,8 @@ let depth = 0
 
 function traverse(val, seen = new Set()) {
 
-  debugger // ④ traverse开始
+  debugger // ④ traverse 开始 → 【观察】val 是什么？深度遍历会递归访问所有属性，触发 track
+  // 注意：depth 会在页面上显示遍历深度
 
   if (typeof val !== 'object' || val === null || seen.has(val)) return
   seen.add(val)
@@ -176,7 +177,8 @@ function traverse(val, seen = new Set()) {
     depth++
     document.getElementById('depth').innerText = depth
 
-    debugger // ⑤ 访问属性 → 触发track
+    debugger // ⑤ 访问属性 → 【观察】当前遍历的 key 是什么？触发 track 会被收集为依赖
+    // 页面上 depth+1 表示进入一层
 
     traverse(val[k], seen)
 
@@ -193,7 +195,8 @@ let cbCount = 0
 
 function watch(source, cb) {
 
-  debugger // ⑥ watch初始化
+  debugger // ⑥ watch 初始化 → 【观察】source 是对象，所以 getter = () => traverse(source)
+  // 目的：通过 traverse 深度遍历所有属性，让每个属性都被 track 收集
 
   let getter
 
@@ -208,7 +211,8 @@ function watch(source, cb) {
 
   const job = () => {
 
-    debugger // ⑦ scheduler触发（依赖变化）
+    debugger // ⑦ scheduler 触发（依赖变化）→ 【观察】执行 runner() 获取新值，然后调用 cb
+    // 新旧值在此处比较
 
     newValue = runner()
     cbCount++
@@ -221,7 +225,8 @@ function watch(source, cb) {
 
   const runner = effect(() => {
 
-    debugger // ⑧ watch getter执行（收集依赖）
+    debugger // ⑧ watch getter 执行 → 【观察】正在收集依赖（跑 traverse，递归 track 所有属性）
+    // 这样后续任何属性变化都能触发 watch 回调
 
     return getter()
 
@@ -231,7 +236,7 @@ function watch(source, cb) {
 
   oldValue = runner()
 
-  debugger // ⑨ 初始值完成
+  debugger // ⑨ 初始值记录完成 → 【观察】oldValue 已保存，后续变化会通过 scheduler 触发
 }
 
 /* ================= demo ================= */
@@ -250,7 +255,8 @@ function createWatch() {
   // 使用 state 对象作为 source → 触发 traverse 深度遍历
   watch(state, (nv, ov) => {
 
-    debugger // ⑪ callback执行（traverse 已收集所有嵌套依赖）
+    debugger // ⑪ callback 执行 → 【观察】newValue 和 oldValue 的值，traverse 已收集所有嵌套依赖
+    // 修改 count 或 nested.num 都会触发此回调
 
     log(`count: ${state.count}, nested.num: ${state.nested.num}`)
   })
@@ -260,11 +266,15 @@ function createWatch() {
 }
 
 function incCount() {
+  // 【观察】修改 state.count → trigger → watch 的 scheduler 执行 → 回调拿到新旧值
+  debugger
   state.count++
   document.getElementById('count').innerText = state.count
 }
 
 function incNested() {
+  // 【观察】修改 state.nested.num → 深层属性也被 traverse 收集，同样触发 watch 回调
+  debugger
   state.nested.num++
   document.getElementById('nested').innerText = state.nested.num
 }

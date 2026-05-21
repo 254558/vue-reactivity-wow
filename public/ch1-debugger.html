@@ -85,15 +85,15 @@ const bucket = new Map()
 let state = null
 
 function effect(fn) {
-  // ① 进入 effect：准备收集依赖
+  // ① 进入 effect → 【观察】activeEffect 即将被赋值为 fn
   debugger
 
   activeEffect = fn
 
-  // ② 执行 fn → 会触发 get → 进入 track
+  // ② 执行 fn → 触发 get → 进入 track（看下一行的 debugger 在 get 里）
   fn()
 
-  // ③ fn 执行完，依赖已收集完成
+  // ③ fn 执行完，依赖已收集完成 → 【观察】activeEffect 已置 null（依赖收集阶段结束）
   activeEffect = null
 
   debugger
@@ -101,7 +101,7 @@ function effect(fn) {
 
 /* 依赖收集：发生在 get 之后 */
 function track(target, key) {
-  // ④ 只有在 effect 执行时才会收集依赖
+  // ④ 进入 track → 【观察】activeEffect 是否为 fn（非空说明在 effect 内）
   debugger
 
   if (!activeEffect) return
@@ -121,12 +121,13 @@ function track(target, key) {
   // ⑤ 建立：target → key → effect
   deps.add(activeEffect)
 
+  // → 【观察】在 Scope 中展开 bucket，看 target → key → Set[effect] 的结构
   debugger
 }
 
 /* 触发更新：发生在 set 之后 */
 function trigger(target, key) {
-  // ⑥ 数据发生变化，开始通知依赖
+  // ⑥ 数据发生变化 → 【观察】从 bucket 中取出 deps，看哪些 effect 将被执行
   debugger
 
   const depsMap = bucket.get(target)
@@ -136,7 +137,7 @@ function trigger(target, key) {
   if (!deps) return
 
   deps.forEach(fn => {
-    // ⑦ 重新执行 effect → 会再次触发 get → 重新 track
+    // ⑦ 重新执行 effect → 【观察】执行栈回到 effect 函数，将再次触发 get→track 流程
     debugger
     fn()
   })
@@ -146,7 +147,7 @@ function trigger(target, key) {
 function reactive(data) {
   return new Proxy(data, {
     get(target, key) {
-      // ⑧ 读取数据 → 触发依赖收集
+      // ⑧ get → 【观察】key 是什么？即将进入 track 收集依赖
       debugger
 
       track(target, key)
@@ -155,7 +156,7 @@ function reactive(data) {
     },
 
     set(target, key, val) {
-      // ⑨ 修改数据 → 触发更新流程
+      // ⑨ set → 【观察】数据即将被修改，随后调用 trigger 通知所有依赖
       debugger
 
       target[key] = val
@@ -170,6 +171,9 @@ function reactive(data) {
 /* ================= 初始化 ================= */
 
 function setup() {
+  // → 【观察】创建 reactive({ count: 0 })，然后执行 effect 建立依赖收集
+  debugger
+
   document.getElementById('setupBtn').disabled = true
 
   state = reactive({ count: 0 })
@@ -185,11 +189,13 @@ function setup() {
 /* ================= 操作 ================= */
 
 function add() {
+  // → 【观察】state.count++ 会触发 setter → trigger → 重新执行 effect 更新页面
   debugger
   state.count++
 }
 
 function reduce() {
+  // → 【观察】效果同上，递减操作触发相同的响应式流程
   debugger
   state.count--
 }

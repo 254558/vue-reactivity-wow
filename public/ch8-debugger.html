@@ -378,14 +378,15 @@ function renderCompare(msg) {
 
 function patchStep() {
 
-  debugger // [Diff] 开始新一轮 while
+  debugger // [Diff] 开始新一轮 while → 【观察】四个指针的当前位置
+  // 蓝色边框 = start，黄色边框 = end，灰色 = 已处理
 
   if (
     oldStartIdx > oldEndIdx ||
     newStartIdx > newEndIdx
   ) {
 
-    debugger // [End] 指针越界 → Diff结束
+    debugger // [End] 指针越界 → 【观察】任意一组指针交叉，Diff 结束
 
     renderCompare('✓ Diff 完成')
 
@@ -401,7 +402,8 @@ function patchStep() {
   const newS = newChildren[newStartIdx]
   const newE = newChildren[newEndIdx]
 
-  debugger // [Compare] 四指针比较阶段
+  debugger // [Compare] 四指针比较 → 【观察】对比框中的四指针值，看哪种匹配命中
+  // 比较顺序：头-头 → 尾-尾 → 头-尾 → 尾-头 → 查找复用
 
   renderCompare(`
     oldStart = ${oldS}<br>
@@ -416,7 +418,7 @@ function patchStep() {
 
   if (oldS === newS) {
 
-    debugger // [Hit] 头-头匹配
+    debugger // [Hit] 头-头匹配 → 【观察】oldStart === newStart，两指针同时右移
 
     ops.push({
       type: 'none',
@@ -438,7 +440,7 @@ function patchStep() {
 
   if (oldE === newE) {
 
-    debugger // [Hit] 尾-尾匹配
+    debugger // [Hit] 尾-尾匹配 → 【观察】oldEnd === newEnd，两指针同时左移
 
     ops.push({
       type: 'none',
@@ -460,7 +462,7 @@ function patchStep() {
 
   if (oldS === newE) {
 
-    debugger // [Move] oldStart → newEnd
+    debugger // [Move] oldStart → newEnd → 【观察】oldStart 匹配 newEnd，需要将元素移动到尾部
 
     ops.push({
       type: 'move',
@@ -482,7 +484,7 @@ function patchStep() {
 
   if (oldE === newS) {
 
-    debugger // [Move] oldEnd → newStart
+    debugger // [Move] oldEnd → newStart → 【观察】oldEnd 匹配 newStart，需要将元素移动到头部
 
     ops.push({
       type: 'move',
@@ -502,7 +504,7 @@ function patchStep() {
      5. 查找复用
   ========================= */
 
-  debugger // [Lookup] 查找可复用节点
+  debugger // [Lookup] 四指针都不匹配 → 【观察】遍历旧 children，看 newStart 能否复用
 
   const idxInOld = oldChildren.findIndex(
     (item, i) => {
@@ -516,7 +518,7 @@ function patchStep() {
 
   if (idxInOld > -1) {
 
-    debugger // [Reuse] 找到旧节点
+    debugger // [Reuse] 找到可复用的旧节点 → 【观察】旧索引 idxInOld，节点移动复用
 
     ops.push({
       type: 'move',
@@ -525,7 +527,7 @@ function patchStep() {
 
   } else {
 
-    debugger // [Add] 新节点
+    debugger // [Add] 旧中没有此节点 → 【观察】这是新增节点，需要创建
 
     ops.push({
       type: 'add',
@@ -547,7 +549,8 @@ function patchStep() {
 
 function setup() {
 
-  debugger // [Init] 初始化Diff状态
+  debugger // [Init] 初始化 → 【观察】四指针归位：oldStart=0, oldEnd=3, newStart=0, newEnd=4
+  // 旧: A B C D，新: D A C E B
 
   document.getElementById('setupBtn').disabled = true
 
@@ -580,7 +583,7 @@ function setup() {
 
 function diffStep() {
 
-  debugger // [Step] 手动执行一步
+  debugger // [Step] 手动执行 → 【观察】每点一次执行一轮 while，看指针和操作变化
 
   const ok = patchStep()
 
@@ -597,7 +600,7 @@ function diffStep() {
 
 function diffAll() {
 
-  debugger // [Auto] 自动执行全部
+  debugger // [Auto] 自动执行全部 → 【观察】一次性跑完所有 while 循环，看完整流程
 
   document.getElementById('stepBtn').disabled = true
   document.getElementById('autoBtn').disabled = true
@@ -613,7 +616,7 @@ function diffAll() {
 
 function resetDiff() {
 
-  debugger // [Reset] 重置状态
+  debugger // [Reset] 重置 → 【观察】恢复初始状态，重新开始
 
   document.getElementById('setupBtn').disabled = false
 

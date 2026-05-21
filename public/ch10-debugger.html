@@ -499,7 +499,7 @@ function flash(el, cls='active'){
 
 function h(type, props, children){
 
-  debugger // h() 创建 VNode
+  debugger // h() 创建 VNode → 【观察】参数 type/props/children 组装成 VNode 对象
 
   return {
     type,
@@ -515,7 +515,8 @@ function h(type, props, children){
 
 function createComponentInstance(vnode){
 
-  debugger // ① createComponentInstance
+  debugger // ① createComponentInstance → 【观察】右侧「create instance」步骤高亮
+  // 看 vnode.type 是什么（ParentComponent 还是 ChildComponent）
 
   activeStep('s1')
 
@@ -537,7 +538,7 @@ function createComponentInstance(vnode){
 
   }
 
-  debugger // instance 已创建
+  debugger // → 【观察】instance 结构：props/setupState/render/subTree 都还是空
 
   return instance
 }
@@ -548,7 +549,8 @@ function createComponentInstance(vnode){
 
 function setupComponent(instance){
 
-  debugger // ② setupComponent
+  debugger // ② setupComponent → 【观察】右侧「setupComponent」步骤高亮
+  // 即将执行组件的 setup() 函数，初始化 setupState
 
   activeStep('s2')
 
@@ -556,13 +558,13 @@ function setupComponent(instance){
 
   const setupResult = Component.setup(instance.props)
 
-  debugger // setup() 执行结束
+  debugger // → 【观察】setup() 执行结束，setupResult 包含组件的响应式状态
 
   instance.setupState = setupResult
 
   instance.render = Component.render.bind(instance)
 
-  debugger // render 函数绑定完成
+  debugger // → 【观察】render 函数已绑定到 instance，setupState 已就绪
 }
 
 /* ======================================================
@@ -571,25 +573,27 @@ function setupComponent(instance){
 
 function mountComponent(vnode, container){
 
-  debugger // mountComponent 开始
+  debugger // mountComponent 开始 → 【观察】整体流程：createInstance → setup → render → mount
 
   const instance = createComponentInstance(vnode)
 
   setupComponent(instance)
 
-  debugger // ③ render()
+  debugger // ③ render() → 【观察】右侧「render()」步骤高亮
+  // 即将执行 instance.render() 生成虚拟 DOM 子树
 
   activeStep('s3')
 
   const subTree = instance.render()
 
-  debugger // render() 返回 VNode subTree
+  debugger // → 【观察】render() 返回 VNode subTree（如 div 元素）
 
   instance.subTree = subTree
 
   activeStep('s4')
 
-  debugger // ④ 开始 mount subTree
+  debugger // ④ 开始 mount subTree → 【观察】右侧「create subTree」步骤高亮
+  // 将 VNode 递归挂载为真实 DOM
 
   mountElement(subTree, container)
 
@@ -604,7 +608,8 @@ function mountComponent(vnode, container){
 
 function mountElement(vnode, container){
 
-  debugger // ⑤ mountElement
+  debugger // ⑤ mountElement → 【观察】右侧「mountElement」步骤高亮
+  // 根据 vnode.type 创建 DOM 元素
 
   activeStep('s5')
 
@@ -614,14 +619,14 @@ function mountElement(vnode, container){
 
   if(typeof vnode.children === 'string'){
 
-    debugger // 设置文本 children
+    debugger // → 【观察】文本 children 直接赋值 textContent
 
     el.textContent = vnode.children
   }
 
   container.appendChild(el)
 
-  debugger // DOM append 完成
+  debugger // → 【观察】DOM append 完成，页面已显示此元素
 }
 
 /* ======================================================
@@ -630,22 +635,23 @@ function mountElement(vnode, container){
 
 function patch(n1, n2){
 
-  debugger // ⑥ patch
+  debugger // ⑥ patch → 【观察】右侧「patch」步骤高亮
+  // n1 = 旧 subTree, n2 = 新 subTree，对比差异并更新 DOM
 
   activeStep('s6')
 
   const el = n2.el = n1.el
 
-  debugger // 对比 children
+  debugger // → 【观察】拿到旧 DOM 引用，对比 n1.children 和 n2.children
 
   if(n1.children !== n2.children){
 
-    debugger // children 不同 → 更新 DOM
+    debugger // children 不同 → 【观察】更新 DOM 内容（textContent）
 
     el.textContent = n2.children
   }
 
-  debugger // patch 完成
+  debugger // → 【观察】patch 完成，DOM 已更新
 }
 
 /* ======================================================
@@ -656,7 +662,7 @@ const ParentComponent = {
 
   setup(){
 
-    debugger // Parent setup()
+    debugger // Parent setup() → 【观察】初始化父组件的响应式状态 { count: 0 }
 
     return {
       count:0
@@ -665,7 +671,8 @@ const ParentComponent = {
 
   render(){
 
-    debugger // Parent render()
+    debugger // Parent render() → 【观察】生成 VNode，页面中 parentRender 标记为「render 执行」
+    // 对比：this.setupState.count 会反映在生成的 subTree 中
 
     document.getElementById('parentRender').innerText =
       'render 执行'
@@ -686,7 +693,7 @@ const ChildComponent = {
 
   setup(props){
 
-    debugger // Child setup()
+    debugger // Child setup() → 【观察】props 参数接收父组件传入的 { title: "Hello Parent" }
 
     return {
       count:50
@@ -695,7 +702,8 @@ const ChildComponent = {
 
   render(){
 
-    debugger // Child render()
+    debugger // Child render() → 【观察】使用 this.props.title 和 this.setupState.count 生成 VNode
+    // 页面中 childRender 标记为「render 执行」
 
     document.getElementById('childRender').innerText =
       'render 执行'
@@ -714,7 +722,7 @@ const ChildComponent = {
 
 function setup(){
 
-  debugger // 初始化系统
+  debugger // 初始化系统 → 【观察】准备组件容器，解锁「挂载组件」按钮
 
   resetSteps()
 
@@ -747,7 +755,8 @@ mountElement()
 
 function mountApp(){
 
-  debugger // 开始挂载应用
+  debugger // → 【观察】开始挂载应用，先挂载 ParentComponent，再挂载 ChildComponent
+  // 每个组件经历：createInstance → setup → render → mountElement
 
   document.getElementById('mountBtn').disabled = true
 
@@ -765,7 +774,7 @@ function mountApp(){
 
   /* Child */
 
-  debugger // 创建 Child vnode
+  debugger // → 【观察】Parent 已挂载，现在创建 Child VNode（带 props.title）
 
   document.getElementById('propsFlow')
     .classList.add('flow')
@@ -814,13 +823,14 @@ ChildComponent
 
 function parentUpdate(){
 
-  debugger // 父组件更新
+  debugger // → 【观察】父组件更新：state.count++，然后重新 render 生成新 subTree
+  // 父组件闪烁紫色表示 patching
 
   flash(document.getElementById('parentComp'),'patching')
 
   parentInstance.setupState.count++
 
-  debugger // 重新执行 Parent render()
+  debugger // → 【观察】重新执行 Parent render()，生成新的 VNode subTree
 
   const prevTree = parentInstance.subTree
 
@@ -830,7 +840,7 @@ function parentUpdate(){
 
   patch(prevTree, nextTree)
 
-  debugger // Child props 未变化 → Child 不更新
+  debugger // → 【观察】patch 完成！Child props 未变化 → 子组件跳过更新（变灰）
 
   document.getElementById('childComp')
     .classList.add('skipped')
@@ -866,13 +876,13 @@ Child props 没变
 
 function childUpdate(){
 
-  debugger // 子组件内部更新
+  debugger // → 【观察】子组件内部更新（只更新自己，不影响父组件）
 
   flash(document.getElementById('childComp'),'patching')
 
   childInstance.setupState.count++
 
-  debugger // Child render()
+  debugger // → 【观察】Child render() 执行，生成新的 subTree
 
   const prevTree = childInstance.subTree
 
@@ -905,7 +915,8 @@ patch()
 
 function changeProps(){
 
-  debugger // Parent 修改 props
+  debugger // → 【观察】Parent 修改 Child 的 props → 子组件需要重新 render + patch
+  // 注意 propsFlow 显示的变化
 
   flash(document.getElementById('parentComp'),'patching')
 
@@ -917,7 +928,7 @@ function changeProps(){
   childInstance.props.title =
     'New Props ' + Math.floor(Math.random()*100)
 
-  debugger // props 改变 → Child 需要重新 render
+  debugger // → 【观察】props 已改变！Child 必须重新 render（与父组件更新时子组件跳过的区别）
 
   const nextTree = childInstance.render()
 

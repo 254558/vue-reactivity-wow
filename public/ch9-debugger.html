@@ -233,7 +233,7 @@ let ast = null
 
 /* ===== Parse ===== */
 function parse(templateStr) {
-  debugger // ① 进入 parse：开始解析 template 字符串
+  debugger // ① 进入 parse → 【观察】templateStr 内容，即将解析构建 AST 树
 
   // 创建 AST 根节点
   const ast = {
@@ -241,7 +241,7 @@ function parse(templateStr) {
     children: []
   }
 
-  debugger // ② Root 节点已创建
+  debugger // ② Root 节点已创建 → 【观察】ast 结构：{ type:'Root', children:[] }
 
   // 解析 <div id="app">
   const root = {
@@ -252,12 +252,12 @@ function parse(templateStr) {
     isStatic: true
   }
 
-  debugger // ③ div Element 节点已创建
+  debugger // ③ div Element 已创建 → 【观察】tag:'div', props:{id:'app'}, isStatic:true
 
   // 放入 Root.children
   ast.children.push(root)
 
-  debugger // ④ div 已挂到 Root.children
+  debugger // ④ div 已挂到 Root.children → 【观察】ast.children 现在有 1 个元素
 
   // 解析 <p>
   const pElem = {
@@ -268,7 +268,7 @@ function parse(templateStr) {
     isStatic: false
   }
 
-  debugger // ⑤ p Element 节点已创建
+  debugger // ⑤ p Element 已创建 → 【观察】tag:'p', isStatic:false（因包含动态插值）
 
   // 解析普通文本 hello
   const textNode = {
@@ -277,12 +277,12 @@ function parse(templateStr) {
     isStatic: true
   }
 
-  debugger // ⑥ Text 节点已创建
+  debugger // ⑥ Text 节点已创建 → 【观察】type:'Text', content:'hello ', isStatic:true
 
   // 放入 p.children
   pElem.children.push(textNode)
 
-  debugger // ⑦ Text 已加入 p.children
+  debugger // ⑦ Text 已加入 p.children → 【观察】pElem.children 现在有 1 个元素
 
   // 解析 {{ name }}
   const interpolationNode = {
@@ -294,67 +294,67 @@ function parse(templateStr) {
     isStatic: false
   }
 
-  debugger // ⑧ Interpolation 节点已创建
+  debugger // ⑧ Interpolation 节点已创建 → 【观察】type:'Interpolation', content:'name'
 
   // 放入 p.children
   pElem.children.push(interpolationNode)
 
-  debugger // ⑨ Interpolation 已加入 p.children
+  debugger // ⑨ Interpolation 已加入 p.children → 【观察】pElem.children 有 2 个元素
 
   // p 放入 div.children
   root.children.push(pElem)
 
-  debugger // ⑩ p 已加入 div.children
+  debugger // ⑩ p 已加入 div.children → 【观察】root.children 有 1 个元素
 
-  debugger // ⑪ AST 构建完成
+  debugger // ⑪ AST 构建完成 → 【观察】完整 AST 结构：Root > div > p > Text + Interpolation
 
   return ast
 }
 
 /* ===== Transform ===== */
 function transform(ast) {
-  debugger // ① 进入 transform：开始遍历 AST
+  debugger // ① 进入 transform → 【观察】即将递归遍历 AST，给每个节点打补丁标记
 
   function traverseNode(node) {
-    debugger // ② 正在访问节点
+    debugger // ② 正在访问节点 → 【观察】当前 node.type 是什么？(Root/Element/Text/Interpolation)
 
     // Root / Element 才有 children
     if (node.children) {
       node.children.forEach(child => {
-        debugger // ③ 准备递归进入子节点
+        debugger // ③ 准备递归 → 【观察】即将进入子节点（深度优先遍历）
         traverseNode(child)
       })
     }
 
     // 模拟 Vue 编译优化
     if (node.type === 'Text') {
-      debugger // ④ Text 节点：标记静态提升
+      debugger // ④ Text 节点 → 【观察】标记 hoist=true（静态提升，不参与更新）
       node.hoist = true
     }
 
     if (node.type === 'Interpolation') {
-      debugger // ⑤ Interpolation：标记为动态节点
+      debugger // ⑤ Interpolation → 【观察】标记 patchFlag='TEXT'（动态文本，需要更新）
       node.patchFlag = 'TEXT'
     }
 
     if (node.type === 'Element') {
-      debugger // ⑥ Element：分析是否静态
+      debugger // ⑥ Element → 【观察】isStatic 决定 patchFlag 是 STATIC 还是 DYNAMIC
       node.patchFlag = node.isStatic ? 'STATIC' : 'DYNAMIC'
     }
 
-    debugger // ⑦ 当前节点处理完成，准备返回上一层
+    debugger // ⑦ 当前节点处理完成 → 【观察】此时 node 已带有 hoist/patchFlag 标记
   }
 
   traverseNode(ast)
 
-  debugger // ⑧ transform 全部完成
+  debugger // ⑧ transform 全部完成 → 【观察】AST 中每个节点都多了优化标记
 
   return ast
 }
 
 /* ===== Codegen ===== */
 function codegen(ast) {
-  debugger // ① 进入 codegen：开始根据 AST 生成 render 函数
+  debugger // ① 进入 codegen → 【观察】根据 AST 生成 render 函数字符串
 
   // 模拟 Vue 生成 render 代码
   let code = `
@@ -368,7 +368,8 @@ function render() {
 }
 `.trim()
 
-  debugger // ② render 函数代码字符串已生成
+  debugger // ② render 函数已生成 → 【观察】生成的代码与原始 template 对比
+  // 模板：<div><p>hello {{ name }}</p></div> → render 中用 _ctx.name 引用动态变量
 
   return code
 }
@@ -388,37 +389,37 @@ function setStage(stage, state) {
 
 /* ===== 按钮操作 ===== */
 function setup() {
-  debugger // ① 初始化页面
+  debugger // ① 初始化 → 【观察】准备展示 template 字符串，解锁 Parse 按钮
 
   document.getElementById('setupBtn').disabled = true
 
   setStage('template', 'active')
 
-  debugger // ② template 已准备显示
+  debugger // ② template 已显示 → 【观察】代码框中是原始模板字符串
 
   document.getElementById('codeBox').innerHTML =
     `<span class="muted">模板:</span> ${template.replace(/</g, '&lt;')}`
 
   document.getElementById('parseBtn').disabled = false
 
-  debugger // ③ Parse 按钮已解锁
+  debugger // ③ Parse 按钮已解锁 → 点击「Parse」进入编译第一阶段
 
   log('初始化完成，模板已就绪')
 }
 
 function doParse() {
-  debugger // ① 点击 Parse：开始 parse 阶段
+  debugger // ① 点击 Parse → 【观察】即将进入 parse() 函数构建 AST
 
   document.getElementById('parseBtn').disabled = true
 
   setStage('parse', 'processing')
   document.getElementById('arrow-parse').className = 'pipe-arrow active'
 
-  debugger // ② parse 阶段 UI 已高亮
+  debugger // ② Parse 阶段已高亮 → 【观察】UI 上的 Parse 阶段标记变绿
 
   ast = parse(template)
 
-  debugger // ③ parse() 已返回 AST
+  debugger // ③ parse() 已返回 AST → 【观察】ast 是完整的 AST 树结构
 
   setStage('parse', 'active')
 
@@ -433,28 +434,28 @@ function doParse() {
         <span class="key">content</span>: <span class="fn">name</span>
       }`
 
-  debugger // ④ AST 已渲染到页面
+  debugger // ④ AST 已展示到页面 → 【观察】代码框中显示了 AST 的层级结构
 
   document.getElementById('transformBtn').disabled = false
 
-  debugger // ⑤ Transform 按钮已解锁
+  debugger // ⑤ Transform 按钮已解锁 → 点击进入编译优化阶段
 
   log('Parse 完成 → AST 已构建')
 }
 
 function doTransform() {
-  debugger // ① 点击 Transform：开始 AST 优化
+  debugger // ① 点击 Transform → 【观察】即将遍历 AST，给节点添加优化标记
 
   document.getElementById('transformBtn').disabled = true
 
   setStage('transform', 'processing')
   document.getElementById('arrow-transform').className = 'pipe-arrow active'
 
-  debugger // ② transform 阶段 UI 已高亮
+  debugger // ② Transform 阶段已高亮
 
   transform(ast)
 
-  debugger // ③ transform() 执行完成
+  debugger // ③ transform() 执行完成 → 【观察】AST 节点已打上 patchFlag/hoist 标记
 
   setStage('transform', 'active')
 
@@ -475,28 +476,28 @@ function doTransform() {
     <span class="muted">Interpolation name</span>
       → patchFlag: TEXT`
 
-  debugger // ④ 优化信息已显示
+  debugger // ④ 优化信息已显示 → 【观察】静态节点标记了 hoist/patchFlag，动态节点标记了 TEXT
 
   document.getElementById('codegenBtn').disabled = false
 
-  debugger // ⑤ Codegen 按钮已解锁
+  debugger // ⑤ Codegen 按钮已解锁 → 点击进入代码生成阶段
 
   log('Transform 完成 → 节点已优化')
 }
 
 function doCodegen() {
-  debugger // ① 点击 Codegen：开始生成 render 函数
+  debugger // ① 点击 Codegen → 【观察】即将根据优化后的 AST 生成 render 函数
 
   document.getElementById('codegenBtn').disabled = true
 
   setStage('codegen', 'processing')
   document.getElementById('arrow-codegen').className = 'pipe-arrow active'
 
-  debugger // ② codegen 阶段 UI 已高亮
+  debugger // ② Codegen 阶段已高亮
 
   const code = codegen(ast)
 
-  debugger // ③ render 函数代码已生成
+  debugger // ③ render 函数已生成 → 【观察】code 是字符串形式的 render 函数
 
   setStage('codegen', 'active')
 
@@ -518,7 +519,8 @@ function doCodegen() {
   )
 }`
 
-  debugger // ④ render 函数已显示到页面
+  debugger // ④ render 函数已展示到页面 → 【观察】最终生成的渲染函数，可直接用于虚拟 DOM 渲染
+  // 完整流程：Template → Parse(构建AST) → Transform(优化标记) → Codegen(生成render)
 
   log('Codegen 完成 → 渲染函数已生成！')
 }

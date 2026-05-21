@@ -3,12 +3,6 @@
 
     <div class="home-container">
 
-      <!-- 浏览器兼容提示 -->
-      <div class="browser-warning">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <span>仅支持 <strong>Chrome</strong> — 需要 DevTools Sources 面板体验 debugger 步进调试</span>
-      </div>
-
       <!-- 英雄区 -->
       <section class="hero">
         <div class="hero-icon">
@@ -19,8 +13,8 @@
           <span class="hero-main">一步一步 Debug 给你看</span>
         </h1>
         <p class="hero-desc">
-          每一行核心代码都嵌入了 <code>debugger</code>，打开 Chrome DevTools，<br>
-          点击章节，跟着按钮一步步观察响应式系统的真实运行过程。
+          每一行核心代码都嵌入了 <code>debugger</code>，需要 <strong class="text-chrome">Chrome</strong> DevTools Sources 面板<br>
+          打开 F12，选择章节，跟着按钮一步步步进调试。
         </p>
       </section>
 
@@ -78,22 +72,6 @@ const chapters = [
   padding: 3rem 1.5rem 6rem;
 }
 
-/* ===== 浏览器提示 ===== */
-.browser-warning {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(245, 158, 11, 0.06);
-  border: 1px solid rgba(245, 158, 11, 0.15);
-  border-radius: 8px;
-  padding: 10px 16px;
-  margin-bottom: 3rem;
-  font-size: 0.78rem;
-  color: #f59e0b;
-  line-height: 1.5;
-}
-.browser-warning strong { color: #d0e4da; }
-
 /* ===== 英雄区 ===== */
 .hero {
   text-align: center;
@@ -126,6 +104,9 @@ const chapters = [
   max-width: 520px;
   margin: 1rem auto 0;
   line-height: 1.7;
+}
+.text-chrome {
+  color: #f59e0b;
 }
 .hero-desc code {
   display: inline-block;

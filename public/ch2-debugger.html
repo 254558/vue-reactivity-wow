@@ -104,7 +104,7 @@ let asyncRenderCount = 0
 function effect(fn, options = {}) {
   const effectFn = () => {
 
-    // ① effect 执行开始
+    // ① effect 执行开始 → 【观察】activeEffect 被赋值为 effectFn，然后执行 fn()
     debugger
 
     activeEffect = effectFn
@@ -113,7 +113,7 @@ function effect(fn, options = {}) {
 
     activeEffect = null
 
-    // ② effect 执行结束
+    // ② effect 执行结束 → 【观察】activeEffect 已置空
     debugger
   }
 
@@ -150,18 +150,18 @@ function trigger(target, key) {
 
   effects.forEach(fn => {
 
-    // ③ trigger：准备执行 effect
+    // ③ trigger：准备执行 effect → 【观察】看 fn.options.scheduler 是否存在
     debugger
 
     if (fn.options.scheduler) {
 
-      // ④ 有调度器 → 进入 queueJob
+      // ④ 有调度器 → 进入 queueJob → 【观察】不走直接执行，而是交给调度器
       debugger
       fn.options.scheduler(fn)
 
     } else {
 
-      // ⑤ 无调度器 → 直接同步执行
+      // ⑤ 无调度器 → 直接同步执行 → 【观察】同步 effect 立即执行 fn()
       debugger
       fn()
     }
@@ -191,7 +191,7 @@ const p = Promise.resolve()
 
 function flushJob() {
 
-  // ⑥ 微任务开始执行
+  // ⑥ 微任务开始执行 → 【观察】jobQueue 中的 job 被批量执行（页面只更新一次）
   debugger
 
   const jobs = [...jobQueue]
@@ -204,18 +204,20 @@ function flushJob() {
 
 function queueJob(fn) {
 
-  // ⑦ job 入队（Set去重）
+  // ⑦ job 入队 → 【观察】jobQueue.add(fn)，Set 自动去重，多次触发只保留一个
   debugger
 
   jobQueue.add(fn)
 
-  // ⑧ 只注册一次微任务
+  // ⑧ 只注册一次微任务 → 【观察】p.then(flushJob)，同一 tick 多次 trigger 只注册一次
   p.then(flushJob)
 }
 
 /* ================= 初始化 ================= */
 
 function setup() {
+  // → 【观察】创建 reactive state，注册两个 effect（一个同步、一个带 scheduler 异步）
+  debugger
 
   document.getElementById('setupBtn').disabled = true
 
@@ -245,20 +247,22 @@ function setup() {
 
 function changeSync() {
 
-  state.count++
-  state.count++
-  state.count++
+  // 【观察】每次 state.count++ 都立即 trigger → 同步 effect 执行 3 次（同步渲染 +3）
+  debugger
 
-  // 每次都 trigger → 每次都执行 effect → 3次渲染
+  state.count++
+  state.count++
+  state.count++
 }
 
 function changeAsync() {
 
-  state.count++
-  state.count++
-  state.count++
+  // 【观察】3 次 trigger 但 scheduler 去重 → 只入队 1 次 → microtask 只渲染 1 次
+  debugger
 
-  // trigger 3次 → scheduler 去重 → 只入队1次 → microtask执行1次
+  state.count++
+  state.count++
+  state.count++
 }
 
 </script>

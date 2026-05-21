@@ -5,7 +5,7 @@
       <div class="nav-inner">
         <router-link to="/" class="nav-brand">
           <div class="brand-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <img src="./styles/vite.svg" width="24" height="24" alt="logo" />
           </div>
           <span class="brand-text">一点一点看</span>
         </router-link>

@@ -125,24 +125,25 @@ function effectWithStack(fn) {
   const effectFn = () => {
 
     // ===== 进入 effect =====
-    debugger // push 前：即将进入栈
+    debugger // → 【观察】effectStack 即将 push，activeEffect 将指向当前 effectFn
+    // 看右侧 UI 面板中栈的变化
 
     effectStack.push(effectFn)
     activeEffect = effectFn
     updateStackDisplay()
 
-    debugger // 状态已切换：effectStack + activeEffect 已更新
+    debugger // → 【观察】effectStack 已更新，activeEffect 指向栈顶元素
 
     fn()
 
     // ===== effect 执行结束 =====
-    debugger // 即将出栈（关键回退点）
+    debugger // → 【观察】即将出栈（关键回退点），出栈后 activeEffect 恢复为父级
 
     effectStack.pop()
     activeEffect = effectStack[effectStack.length - 1] || null
     updateStackDisplay()
 
-    debugger // 出栈完成：activeEffect 已恢复
+    debugger // → 【观察】出栈完成，activeEffect 已恢复为外层 effect（或 null）
   }
 
   effectFn()
@@ -231,31 +232,32 @@ function setup() {
 /* ===== 创建嵌套 effect ===== */
 function createEffects() {
 
-  debugger // 开始创建嵌套 effect（关键入口）
+  debugger // → 【观察】开始创建嵌套 effect，看 effectStack 如何动态变化
 
   document.getElementById('effectBtn').disabled = true
 
   effect1 = effectWithStack(() => {
 
-    debugger // effect1 执行开始（外层）
+    debugger // → 【观察】effect1 执行开始（外层），栈中只有 effect1
 
     document.getElementById('textVal').innerText = `"${state.text}"`
     updateDisplay()
 
     effect2 = effectWithStack(() => {
 
-      debugger // effect2 执行开始（内层嵌套）
+      debugger // → 【观察】effect2 执行开始（内层嵌套），栈中有 [effect1, effect2]
+      // activeEffect = effect2，effect1 被压在栈底，不会丢失
 
       document.getElementById('textVal').innerText = `"${state.text}"`
       updateDisplay()
 
-      debugger // effect2 执行结束
+      debugger // → 【观察】effect2 即将出栈，出栈后 activeEffect 恢复为 effect1
 
     })
 
     effect2._name = 'effect2'
 
-    debugger // effect1 继续执行（此时 effect2 已注册）
+    debugger // → 【观察】effect2 已出栈，activeEffect 恢复为 effect1（正确！）
 
   })
 
@@ -271,7 +273,8 @@ function createEffects() {
 /* ===== 覆盖问题演示 ===== */
 function showProblem() {
 
-  debugger // 进入"无栈版本问题演示"
+  debugger // → 【观察】演示无栈版本的 activeEffect 覆盖问题（没有 effectStack）
+  // 下面的 oldEffect 没有栈机制，嵌套时会直接覆盖 oldActive
 
   document.getElementById('problemBtn').disabled = true
   log('--- 无栈版本：activeEffect 覆盖问题 ---')
@@ -328,29 +331,32 @@ function showProblem() {
 
   const oldState = oldReactive({ text: 'Hello' })
 
-  debugger // effect1 开始执行（无栈）
+  debugger // → 【观察】effect1 开始执行，oldActive 设为 effect1
 
   oldEffect(() => {
 
-    debugger // effect1 active
+    debugger // → 【观察】oldActive = effect1，读取 oldState.text
 
     const _ = oldState.text
 
     oldEffect(() => {
 
-      debugger // effect2 覆盖 oldActive
+      debugger // → 【观察】问题！oldActive 被 effect2 覆盖（effect1 丢失了）
+      // 此时 effect2 中的 get 会正确收集，但 effect1 后续的 get 会被错误收集到 effect2
 
       const _2 = oldState.text
 
     })
 
-    debugger // 回到 effect1，但 oldActive 已被污染
+    debugger // → 【观察】回到 effect1，但 oldActive 仍然是 effect2（被污染了！）
+    // 下面这行本应收集到 effect1，但实际收集到了 effect2
 
     const _3 = oldState.text
 
   })
 
-  debugger // 问题结束点
+  debugger // → 【观察】问题结束：第三个 oldState.text 的依赖被错误关联到 effect2
+  // 点击「EffectStack 解决」切换到正确版本对比
 
   log('问题：无栈导致 activeEffect 被覆盖')
   document.getElementById('solutionBtn').disabled = false
@@ -359,7 +365,8 @@ function showProblem() {
 /* ===== 解决方案 ===== */
 function showSolution() {
 
-  debugger // 切换到 effectStack 正确模型
+  debugger // → 【观察】切换到 effectStack 正确模型，前面的 effect1/effect2 已经用栈解决了覆盖问题
+  // 现在可以点击「修改数据」测试 trigger 时 activeEffect 的正确行为
 
   document.getElementById('solutionBtn').disabled = true
   document.getElementById('changeBtn').disabled = false
@@ -370,7 +377,7 @@ function showSolution() {
 /* ===== 修改数据 ===== */
 function changeText() {
 
-  debugger // trigger 执行入口（setter 会同步触发所有 effect）
+  debugger // → 【观察】setter → trigger，看 effectStack 中两个 effect 如何被同步执行
 
   state.text = 'World'
 

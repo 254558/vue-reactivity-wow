@@ -86,7 +86,7 @@ let setCount = 0
 
 function effect(fn) {
   const e = () => {
-    debugger // ① effect执行
+    debugger // ① effect执行 → 【观察】activeEffect 被赋值，执行 fn() 触发 ref 的 get
     activeEffect = e
     const res = fn()
     activeEffect = null
@@ -115,27 +115,29 @@ function trigger(t, k) {
   const set = map.get(k)
   if (!set) return
   set.forEach(fn => {
-    debugger // ② trigger触发
+    debugger // ② trigger → 【观察】正在通知依赖（执行 effect，更新页面）
     fn()
   })
 }
 
 /* ================= ref实现 ================= */
 function ref(val) {
-  debugger // ③ 创建ref
+  debugger // ③ 创建 ref → 【观察】创建 wrapper { value: val }，标记 __v_isRef = true
   const wrapper = { value: val }
   Object.defineProperty(wrapper, '__v_isRef', { value: true })
 
   let proxy = new Proxy(wrapper, {
     get(t, k) {
-      debugger // ④ get value
+      debugger // ④ get value → 【观察】访问 r.value，触发 track 收集依赖
+      // 页面 get 计数 +1
       getCount++
       document.getElementById('get').innerText = getCount
       track(proxy, k)
       return t[k]
     },
     set(t, k, v) {
-      debugger // ⑤ set value
+      debugger // ⑤ set value → 【观察】修改 r.value，触发 trigger 通知更新
+      // 页面 set 计数 +1
       setCount++
       document.getElementById('set').innerText = setCount
       t[k] = v
@@ -148,11 +150,11 @@ function ref(val) {
 
 /* ================= proxyRefs ================= */
 function proxyRefs(obj) {
-  debugger // ⑥ 创建proxyRefs
+  debugger // ⑥ 创建 proxyRefs → 【观察】返回一个新 Proxy，自动解包 ref（模板中无需 .value）
   return new Proxy(obj, {
     get(t, k) {
       const v = t[k]
-      debugger // ⑦ get proxyRefs
+      debugger // ⑦ get proxyRefs → 【观察】检测到 __v_isRef，自动返回 v.value（解包）
       if (v && v.__v_isRef) {
         document.getElementById('unwrap').innerText = 'auto-unwrapped'
         return v.value
@@ -161,7 +163,7 @@ function proxyRefs(obj) {
     },
     set(t, k, v) {
       const old = t[k]
-      debugger // ⑧ set proxyRefs
+      debugger // ⑧ set proxyRefs → 【观察】检测到 __v_isRef，设置 old.value = v（自动包装）
       if (old && old.__v_isRef) {
         old.value = v
         return true
@@ -191,6 +193,8 @@ function init() {
 }
 
 function createRef() {
+  // 【观察】ref(0) 创建响应式引用，随后 effect 会读取 r.value 触发 get→track
+  debugger
   r = ref(0)
   // 挂载副作用，激活activeEffect，track才能生效
   effect(renderView)
@@ -201,14 +205,20 @@ function createRef() {
 }
 
 function readRef() {
+  // 【观察】访问 r.value → 走 Proxy get → track 收集依赖
+  debugger
   const v = r.value
 }
 
 function writeRef() {
+  // 【观察】r.value++ → 走 Proxy set → trigger 通知更新，页面值变化
+  debugger
   r.value++
 }
 
 function demo() {
+  // 【观察】proxyRefs 自动解包：p.count 直接返回 10（无需 .value）
+  debugger
   const obj = { count: ref(10) }
   const p = proxyRefs(obj)
   const v = p.count
