@@ -16,6 +16,7 @@
       justify-content: center;
       min-height: 100vh;
       padding: 40px 20px;
+      position: relative;
     }
     .box {
       background: #0d1612;
@@ -44,7 +45,6 @@
     }
     .btn-setup { background: #6b7280; }
     .btn-add { background: #10b981; }
-    .btn-reduce { background: #ef4444; }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .tip-box {
       background: #0a100d;
@@ -57,6 +57,24 @@
       line-height: 1.8;
       color: #5e8a76;
     }
+    /* 可拖拽便利贴样式 */
+    .note-sticky {
+      position: fixed;
+      right: 40px;
+      top: 50%;
+      width: 220px;
+      padding: 20px;
+      background: #fff9c4;
+      color: #333;
+      border-radius: 4px;
+      box-shadow: 3px 3px 10px rgba(0,0,0,0.3);
+      font-size: 14px;
+      line-height: 1.7;
+      rotate: 3deg;
+      cursor: move;
+      user-select: none;
+      z-index: 999;
+    }
   </style>
 </head>
 
@@ -68,7 +86,6 @@
   <div class="btn-group">
     <button class="btn btn-setup" id="setupBtn" onclick="setup()">初始化</button>
     <button class="btn btn-add" id="addBtn" onclick="add()" disabled>+1</button>
-    <button class="btn btn-reduce" id="reduceBtn" onclick="reduce()" disabled>-1</button>
   </div>
 
   <div class="tip-box">
@@ -77,7 +94,44 @@
   </div>
 </div>
 
+<!-- 可拖拽便利贴 -->
+<div class="note-sticky" id="dragNote">
+收集依赖的过程第一次就完成了<br>
+set虽然能触发更新<br>
+但本身不负责渲染<br>
+渲染还是要靠get重新读取数据<br>
+重新执行视图逻辑完成渲染
+</div>
+
 <script>
+/* ================= 便利贴拖拽功能 ================= */
+const note = document.getElementById('dragNote')
+let isDragging = false
+let offsetX, offsetY
+
+note.addEventListener('mousedown', (e) => {
+  isDragging = true
+  offsetX = e.clientX - note.getBoundingClientRect().left
+  offsetY = e.clientY - note.getBoundingClientRect().top
+  note.style.cursor = 'grabbing'
+})
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDragging) return
+  const x = e.clientX - offsetX
+  const y = e.clientY - offsetY
+  note.style.left = x + 'px'
+  note.style.top = y + 'px'
+  note.style.right = 'auto'
+})
+
+document.addEventListener('mouseup', () => {
+  if (isDragging) {
+    isDragging = false
+    note.style.cursor = 'move'
+  }
+})
+
 /* ================= 响应式核心 ================= */
 
 let activeEffect = null
@@ -183,7 +237,6 @@ function setup() {
   })
 
   document.getElementById('addBtn').disabled = false
-  document.getElementById('reduceBtn').disabled = false
 }
 
 /* ================= 操作 ================= */
@@ -192,12 +245,6 @@ function add() {
   // → 【观察】state.count++ 会触发 setter → trigger → 重新执行 effect 更新页面
   debugger
   state.count++
-}
-
-function reduce() {
-  // → 【观察】效果同上，递减操作触发相同的响应式流程
-  debugger
-  state.count--
 }
 </script>
 </body>

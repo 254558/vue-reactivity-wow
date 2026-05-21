@@ -43,7 +43,7 @@ const current = computed(() => chapters[route.params.id])
 
 <style scoped>
 .chapter-layout {
-  max-width: 1280px;
+  max-width: 1512px;
   margin: 0 auto;
   padding: 1.5rem;
 }
