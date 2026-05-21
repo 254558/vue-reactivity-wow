@@ -60,13 +60,12 @@
     /* 可拖拽便利贴样式 */
     .note-sticky {
       position: fixed;
-      right: 40px;
-      top: 50%;
+      right: 70px;
+      top: 30%;
       width: 220px;
       padding: 20px;
       background: #fff9c4;
       color: #333;
-      border-radius: 4px;
       box-shadow: 3px 3px 10px rgba(0,0,0,0.3);
       font-size: 14px;
       line-height: 1.7;
@@ -102,35 +101,11 @@ set虽然能触发更新<br>
 渲染还是要靠get重新读取数据<br>
 重新执行视图逻辑完成渲染
 </div>
-
+<script src="https://cdn.jsdelivr.net/npm/draggabilly@3/dist/draggabilly.pkgd.min.js"></script>
 <script>
 /* ================= 便利贴拖拽功能 ================= */
-const note = document.getElementById('dragNote')
-let isDragging = false
-let offsetX, offsetY
+new Draggabilly('#dragNote');
 
-note.addEventListener('mousedown', (e) => {
-  isDragging = true
-  offsetX = e.clientX - note.getBoundingClientRect().left
-  offsetY = e.clientY - note.getBoundingClientRect().top
-  note.style.cursor = 'grabbing'
-})
-
-document.addEventListener('mousemove', (e) => {
-  if (!isDragging) return
-  const x = e.clientX - offsetX
-  const y = e.clientY - offsetY
-  note.style.left = x + 'px'
-  note.style.top = y + 'px'
-  note.style.right = 'auto'
-})
-
-document.addEventListener('mouseup', () => {
-  if (isDragging) {
-    isDragging = false
-    note.style.cursor = 'move'
-  }
-})
 
 /* ================= 响应式核心 ================= */
 

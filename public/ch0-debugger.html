@@ -142,12 +142,12 @@ kbd {
   top: 40%;
   width: 220px;
   padding: 20px;
-  background: #8caad4;
+  background: #bfd4f5;
   color: #333;
   box-shadow: 3px 3px 10px rgba(0,0,0,0.3);
   font-size: 14px;
   line-height: 1.7;
-  rotate: 3deg;
+  rotate: 4deg;
   cursor: move;
   user-select: none;
   z-index: 999;
@@ -156,7 +156,7 @@ kbd {
 </head>
 <body>
 
-<!-- 可拖拽便利贴 -->
+<!-- 便利贴（文字样式不变） -->
 <div class="note-sticky" id="dragNote">
 不知道怎么调试<br>
 就看一下代码文件夹<br>
@@ -194,36 +194,14 @@ kbd {
   <div class="log" id="logArea">等待开始…</div>
 </div>
 
+<!-- 引入拖拽库 -->
+<script src="https://cdn.jsdelivr.net/npm/draggabilly@3/dist/draggabilly.pkgd.min.js"></script>
+
 <script>
-/* ================= 便利贴拖拽功能 ================= */
-const note = document.getElementById('dragNote')
-let isDragging = false
-let offsetX, offsetY
+/* 只用一行代码开启拖拽！ */
+new Draggabilly('#dragNote');
 
-note.addEventListener('mousedown', (e) => {
-  isDragging = true
-  offsetX = e.clientX - note.getBoundingClientRect().left
-  offsetY = e.clientY - note.getBoundingClientRect().top
-  note.style.cursor = 'grabbing'
-})
-
-document.addEventListener('mousemove', (e) => {
-  if (!isDragging) return
-  const x = e.clientX - offsetX
-  const y = e.clientY - offsetY
-  note.style.left = x + 'px'
-  note.style.top = y + 'px'
-  note.style.right = 'auto'
-})
-
-document.addEventListener('mouseup', () => {
-  if (isDragging) {
-    isDragging = false
-    note.style.cursor = 'move'
-  }
-})
-
-/* ================= 其他代码 ================= */
+/* ================= 你原来的所有代码 100% 保留 ================= */
 let allowGreetDebug = false
 
 function log(msg) {
