@@ -169,7 +169,6 @@ kbd {
 </div>
 
 <script>
-let stepCount = 0
 let allowGreetDebug = false
 
 function log(msg) {
@@ -206,112 +205,106 @@ function deepFunc(level) {
   return 0
 }
 
-// ========== 1. 变量练习 ==========
+// 1. 开始按钮
 function start() {
   startBtn.disabled = true
+  stepBtn.disabled = false
+  intoBtn.disabled = true
+  stackBtn.disabled = true
+  resumeBtn.disabled = true
+
   activeFlow('f1')
   showCode('step1', '变量赋值（普通 F10）')
   tip('按 <kbd>F10</kbd>（单行逐行执行），查看局部变量变化')
 
-  // F10(Step Over)：单行执行，默认不进入函数
   debugger
   const a = 1
   const b = 2
   const c = a + b
-
-  // ✅【阶段1完成：按 F8(Resume) 继续运行，再点网页的第二章节的蓝色的按钮】
   debugger
 
-  stepBtn.disabled = false
-  intoBtn.disabled = false
   log('✅ 变量 F10 完成')
-  tip('✅ 变量练习结束！点【2. 函数F10】')
+  tip('✅ 变量练习结束！请点击【二】')
 }
 
-// ========== 2. F10 跳过函数 ==========
+// 2. F10 跳过函数
 function doStepOver() {
-  allowGreetDebug = false
   stepBtn.disabled = true
+  intoBtn.disabled = false
+  stackBtn.disabled = true
+  resumeBtn.disabled = true
+
+  allowGreetDebug = false
   activeFlow('f2')
   showCode('step2', 'F10 跳过函数：直接拿结果')
   tip('<strong>F10(Step Over)：遇到函数直接执行完毕，不进入内部</strong>')
 
-  // F10(Step Over)：跳过函数内部，直接获取返回值
   debugger
   const result = greet('StepOver')
-  
-  // ✅【阶段2完成：按 F8(Resume) 继续运行，再点网页的第二章节的紫色的按钮，】
   debugger
 
   log(`✅ F10 成功：直接拿到结果 = ${result}`)
-  tip('✅ F10 演示完成！')
-  stackBtn.disabled = false
+  tip('✅ F10 演示完成！请点击【三】')
 }
 
-// ========== 3. F11 进入函数 ==========
+// 3. F11 进入函数
 function doStepInto() {
-  allowGreetDebug = true
   intoBtn.disabled = true
+  stackBtn.disabled = false
+  stepBtn.disabled = true
+  resumeBtn.disabled = true
+
+  allowGreetDebug = true
   activeFlow('f3')
   showCode('step3', 'F11 进入函数内部')
   tip('<strong>F11(Step Into)：遇到函数直接钻入内部逐行查看</strong>')
 
-  // F11(Step Into)：进入函数内部执行查看细节
   debugger
   const result = greet('StepInto')
-  
-  // ✅【阶段3完成：按 F8(Resume) 继续运行，再点网页的第二章节的红色的按钮】
   debugger
 
   log(`✅ F11 完成：result = ${result}`)
-  tip('✅ F10 不进函数、F11进函数，基础区分学会！')
+  tip('✅ F10 不进函数、F11进函数，基础区分学会！请点击【四】')
 }
 
-// ========== 4. 调用栈 ==========
+// 4. 调用栈
 function doCallStack() {
   stackBtn.disabled = true
+  resumeBtn.disabled = false
+  stepBtn.disabled = true
+  intoBtn.disabled = true
+
   activeFlow('f4')
   showCode('step4', '递归调用栈')
   tip('按 <kbd>F11</kbd>(Step Into) 进入递归函数，观察调用栈面板')
 
-  // F11(Step Into)：深入递归函数查看层级
   debugger
   const val = deepFunc(3)
-  
-  // ✅【阶段4完成：按 F8(Resume) 继续运行，再点网页的第二章节的绿色的按钮】
   debugger
 
   log(`调用栈结果：deepFunc(3) = ${val}`)
-  resumeBtn.disabled = false
+  tip('✅ 调用栈练习完成！请点击【五】')
 }
 
-// ========== 5. Resume F8 ==========
+// 5. F8 继续运行
 function doResume() {
   resumeBtn.disabled = true
+  stepBtn.disabled = true
+  intoBtn.disabled = true
+  stackBtn.disabled = true
+
   showCode('step5', 'F8 快速跳转断点')
   tip('多个断点场景，按 <kbd>F8</kbd>(Resume) 直接跳到下一处暂停位置')
 
-  // F8(Resume)：跳过中间代码，直达下一个debugger断点
   debugger
   let x = 1
   x *= 2
-  
-  // ✅ 按 F8(Resume) 跳到下一个断点，
   debugger
-  
   x *= 3
-  
-  // ✅ 按 F8(Resume) 跳到下一个断点，
   debugger
-  
   x *= 4
-  
-  // ✅ 按 F8(Resume) 跳到下一个断点，
   debugger
-  
   const final = x
-  
-  // ✅【全部教程结束：按 F8(Resume) 结束本次调试，】
   debugger
 
   log('✅ F8 断点跳转练习完成！')
