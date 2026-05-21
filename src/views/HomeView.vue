@@ -6,15 +6,19 @@
       <!-- 英雄区 -->
       <section class="hero">
         <div class="hero-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 16 16">
+	<path d="M0 0h16v16H0z" fill="none" />
+	<path fill="#54d79b" d="M10 13c0 1.103-.897 2-2 2s-2-.897-2-2s.897-2 2-2s2 .897 2 2m3.25-11a.75.75 0 0 0-.75.75v1.277A5.98 5.98 0 0 0 8 2C5.033 2 2.48 4.211 2.06 7.144a.75.75 0 0 0 1.487.213C3.86 5.159 5.776 3.501 8 3.501c1.529 0 2.919.763 3.743 2H9.75a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 .75-.75v-3.5a.75.75 0 0 0-.75-.75z" />
+</svg>
+
         </div>
         <h1 class="hero-title">
           <span class="hero-sub">深入 Vue 核心原理</span>
-          <span class="hero-main">一步一步 Debug 给你看</span>
+          <span class="hero-main">通过 Debug 观察依赖变化</span>
         </h1>
         <div class="hero-desc">
-          打开 <strong class="text-chrome">Chrome</strong> 的<strong class="text-Sources">DevTools Sources 面板</strong><br>
-          <div class="debug-desc">行号前面打断点，按F10步进观察，按resume中间代码自动跑完，直接停在下一个断点，如果没有断点，就正常运行了</div>
+          <span>打开 <strong class="text-chrome">Chrome</strong> 的<strong class="text-Sources">DevTools Sources 面板</strong></span>
+          <span class="debug-desc">不会debug的看代码里的视频教程</span>
         </div>
       </section>
 
@@ -125,7 +129,7 @@ const chapters = [
 .hero-icon {
   display: flex;
   justify-content: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.25rem;
   opacity: 0.5;
 }
 .hero-sub {
@@ -146,17 +150,21 @@ const chapters = [
 .hero-desc {
   color: #5e8a76;
   font-size: 0.92rem;
-  max-width: 520px;
+  max-width: 100%;
   margin: 1rem auto 0;
   line-height: 1.7;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
 }
 
 .debug-desc {
   color: #5e8a76;
   font-size: 0.92rem;
-  max-width: 920px;
-  margin: 0 auto 0;
-
+  white-space: nowrap;
+  margin: 0;
 }
 
 .text-chrome {
