@@ -61,11 +61,14 @@
           </div>
           <div class="guide-card sticky-green">
             <h3>步进按钮</h3>
+            <!-- 👇 就是这里加了 tbody -->
             <table class="key-table">
-              <tr><td><kbd>F10</kbd></td><td>Step Over</td><td>逐行执行，遇到函数<strong>不进入</strong>，直接拿到返回值</td></tr>
-              <tr><td><kbd>F11</kbd></td><td>Step Into</td><td>逐行执行，遇到函数<strong>进入内部</strong></td></tr>
-              <tr><td><kbd>Shift+F11</kbd></td><td>Step Out</td><td>从当前函数<strong>直接执行完</strong>，回到调用处</td></tr>
-              <tr><td><kbd>F8</kbd></td><td>Resume</td><td>继续运行，直到下一个 <code>debugger</code> 断点</td></tr>
+              <tbody>
+                <tr><td><kbd>F10</kbd></td><td>Step Over</td><td>逐行执行，遇到函数<strong>不进入</strong>，直接拿到返回值</td></tr>
+                <tr><td><kbd>F11</kbd></td><td>Step Into</td><td>逐行执行，遇到函数<strong>进入内部</strong></td></tr>
+                <tr><td><kbd>Shift+F11</kbd></td><td>Step Out</td><td>从当前函数<strong>直接执行完</strong>，回到调用处</td></tr>
+                <tr><td><kbd>F8</kbd></td><td>Resume</td><td>继续运行，直到下一个 <code>debugger</code> 断点</td></tr>
+              </tbody>
             </table>
           </div>
           <div class="guide-card sticky-blue">
