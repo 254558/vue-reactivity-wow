@@ -138,17 +138,14 @@ kbd {
 <body>
 
 <div class="box">
-
   <h1>调试入门练习</h1>
   <p class="subtitle">第 0 章 · 先学会走路，再开始跑步</p>
 
-  <!-- 代码可视化 -->
   <div class="visual" id="codeVis">
     <div class="label">代码执行位置</div>
-    <div id="currentLine" style="margin-top:8px;color:#5e8a76">等待开始…</div>
+    <div id="currentLine">等待开始…</div>
   </div>
 
-  <!-- 执行流程 -->
   <div class="flow-vis" id="flowVis">
     <span class="flow-step" id="f1">变量赋值</span>
     <span class="flow-step" id="f2">函数调用</span>
@@ -156,29 +153,24 @@ kbd {
     <span class="flow-step" id="f4">调用栈</span>
   </div>
 
-  <!-- 按钮 -->
   <div class="btns">
-    <button class="btn1" id="startBtn" onclick="start()">开始</button>
-    <button class="btn2" id="stepBtn" onclick="doStepOver()" disabled>2. 试 Step Over <kbd>F10</kbd></button>
-    <button class="btn3" id="intoBtn" onclick="doStepInto()" disabled>3. 试 Step Into <kbd>F11</kbd></button>
+    <button class="btn1" id="startBtn" onclick="start()">开始（变量 F10）</button>
+    <button class="btn2" id="stepBtn" onclick="doStepOver()" disabled>2. 函数F10：跳过不进函数</button>
+    <button class="btn3" id="intoBtn" onclick="doStepInto()" disabled>3. 函数F11：进入函数</button>
     <button class="btn4" id="stackBtn" onclick="doCallStack()" disabled>4. 看调用栈</button>
-    <button class="btn5" id="resumeBtn" onclick="doResume()" disabled>5. 试 Resume <kbd>F8</kbd></button>
+    <button class="btn5" id="resumeBtn" onclick="doResume()" disabled>5. 试 Resume F8</button>
   </div>
 
-  <!-- 提示 -->
   <div class="tip" id="tipBox">
-    <strong>第一步</strong>：点「开始」按钮，然后看怎么操作
+    <strong>第一步</strong>：点「开始」，按 F10 练习变量
   </div>
 
-  <!-- 日志 -->
   <div class="log" id="logArea">等待开始…</div>
-
 </div>
 
 <script>
-
 let stepCount = 0
-let resumeCount = 0
+let allowGreetDebug = false
 
 function log(msg) {
   const area = document.getElementById('logArea')
@@ -187,8 +179,7 @@ function log(msg) {
 }
 
 function showCode(line, desc) {
-  document.getElementById('currentLine').innerHTML =
-    `<span class="highlight">→</span> ${desc}`
+  document.getElementById('currentLine').innerHTML = `<span class="highlight">→</span> ${desc}`
 }
 
 function tip(msg) {
@@ -197,166 +188,135 @@ function tip(msg) {
 
 function activeFlow(id) {
   document.querySelectorAll('.flow-step').forEach(el => {
-    if (el.id === id) el.className = 'flow-step active'
-    else el.className = 'flow-step done'
+    el.className = 'flow-step done'
   })
+  document.getElementById(id).className = 'flow-step active'
 }
 
 function greet(name) {
-  // Scope > Local: name = 传入的参数，比如 "Debugger"
-  // 按 F11 进入后，看 Scope > Local 面板
-  debugger
-
+  if (allowGreetDebug) debugger
   const msg = 'Hello, ' + name
-
-  // Scope > Local: msg = "Hello, Debugger"，是拼接后的结果
-  debugger
-
+  if (allowGreetDebug) debugger
   return msg
 }
 
 function deepFunc(level) {
-  // Scope > Local: level = 当前的递归层数（3 → 2 → 1 → 0）
-  // 同时看 Call Stack 面板：deepFunc 会出现多次，每层一次
   debugger
-
-  if (level > 0) {
-    return deepFunc(level - 1) + 1
-  }
-
+  if (level > 0) return deepFunc(level - 1) + 1
   return 0
 }
 
+// ========== 1. 变量练习 ==========
 function start() {
-  document.getElementById('startBtn').disabled = true
-
+  startBtn.disabled = true
   activeFlow('f1')
-  showCode('step1', '变量声明与赋值')
-  tip('按 <kbd>F10</kbd>（Step Over）逐行执行，看右侧 Scope > Local 中的变量变化')
+  showCode('step1', '变量赋值（普通 F10）')
+  tip('按 <kbd>F10</kbd>（单行逐行执行），查看局部变量变化')
 
-  // ① 从这里开始
-  // Scope > Script: 只有 script 级别的变量
-  // 按 F10 执行下一行，观察 Scope > Local 中出现 a
+  // F10(Step Over)：单行执行，默认不进入函数
   debugger
-
   const a = 1
   const b = 2
   const c = a + b
 
-  // ② 赋值完成
-  // Scope > Local: a=1, b=2, c=3
-  // 在 DevTools Scope > Local 面板中确认这三个值
+  // ✅【阶段1完成：按 F8(Resume) 继续运行，再点网页的第二章节的蓝色的按钮】
   debugger
 
-  document.getElementById('stepBtn').disabled = false
-  document.getElementById('intoBtn').disabled = false
-
-  log('基本变量练习完成 ✓')
+  stepBtn.disabled = false
+  intoBtn.disabled = false
+  log('✅ 变量 F10 完成')
+  tip('✅ 变量练习结束！点【2. 函数F10】')
 }
 
+// ========== 2. F10 跳过函数 ==========
 function doStepOver() {
+  allowGreetDebug = false
+  stepBtn.disabled = true
   activeFlow('f2')
-  document.getElementById('stepBtn').disabled = true
-  showCode('step2', 'Step Over 跳过函数')
+  showCode('step2', 'F10 跳过函数：直接拿结果')
+  tip('<strong>F10(Step Over)：遇到函数直接执行完毕，不进入内部</strong>')
 
-  // ③ 接下来要用 F10
-  // 调用 greet("StepOver")，如果按 F10 会直接拿到返回值，不会进入 greet 内部
-  // 如果你想进 greet 内部看执行过程，应该按 F11（Step Into）
+  // F10(Step Over)：跳过函数内部，直接获取返回值
   debugger
-
   const result = greet('StepOver')
-
-  // ④ greet 已返回（F10 跳过了内部，直接得到结果）
-  // Scope > Local: result = "Hello, StepOver"
-  // 刚才没有进入 greet 内部——这就是 F10（Step Over）的行为
+  
+  // ✅【阶段2完成：按 F8(Resume) 继续运行，再点网页的第二章节的紫色的按钮，】
   debugger
 
-  log(`Step Over 练习完成：result = ${result}`)
-  document.getElementById('stackBtn').disabled = false
+  log(`✅ F10 成功：直接拿到结果 = ${result}`)
+  tip('✅ F10 演示完成！')
+  stackBtn.disabled = false
 }
 
+// ========== 3. F11 进入函数 ==========
 function doStepInto() {
+  allowGreetDebug = true
+  intoBtn.disabled = true
   activeFlow('f3')
-  document.getElementById('intoBtn').disabled = true
-  showCode('step3', 'Step Into 进入函数')
+  showCode('step3', 'F11 进入函数内部')
+  tip('<strong>F11(Step Into)：遇到函数直接钻入内部逐行查看</strong>')
 
-  tip('试试按 <kbd>F11</kbd> 进入 greet 内部，对比刚才 F10 的体验')
-
-  // ⑤ 这次试 Step Into
-  // 按 F11（Step Into）进入 greet("StepInto") 内部，观察里面的局部变量
-  // 对比刚才用 F10 直接跳过的区别
+  // F11(Step Into)：进入函数内部执行查看细节
   debugger
-
   const result = greet('StepInto')
-
-  // ⑥ 如果你按 F11 进入了 greet，在里面执行完再回到这里
-  // Scope > Local: result = "Hello, StepInto"
-  // 体会 F10 和 F11 的区别
+  
+  // ✅【阶段3完成：按 F8(Resume) 继续运行，再点网页的第二章节的红色的按钮】
   debugger
 
-  log(`Step Into 练习完成：result = ${result}`)
+  log(`✅ F11 完成：result = ${result}`)
+  tip('✅ F10 不进函数、F11进函数，基础区分学会！')
 }
 
+// ========== 4. 调用栈 ==========
 function doCallStack() {
+  stackBtn.disabled = true
   activeFlow('f4')
-  document.getElementById('stackBtn').disabled = true
-  showCode('step4', '递归调用堆栈')
+  showCode('step4', '递归调用栈')
+  tip('按 <kbd>F11</kbd>(Step Into) 进入递归函数，观察调用栈面板')
 
-  tip('按 <kbd>F11</kbd> 进入 deepFunc，然后在 Call Stack 面板中观察函数调用顺序的堆叠')
-
-  // ⑦ 接下来看调用栈
-  // 调用 deepFunc(3) 会递归 4 次
-  // 按 F11 进入 deepFunc，看 Call Stack 面板中 deepFunc 一层层叠加
+  // F11(Step Into)：深入递归函数查看层级
   debugger
-
   const val = deepFunc(3)
-
-  // ⑧ deepFunc 执行完毕，调用栈已清空
-  // Scope > Local: val = 3（递归计算结果）
+  
+  // ✅【阶段4完成：按 F8(Resume) 继续运行，再点网页的第二章节的绿色的按钮】
   debugger
 
-  log(`调用栈练习完成：deepFunc(3) = ${val}`)
-  document.getElementById('resumeBtn').disabled = false
+  log(`调用栈结果：deepFunc(3) = ${val}`)
+  resumeBtn.disabled = false
 }
 
+// ========== 5. Resume F8 ==========
 function doResume() {
-  showCode('step5', '多个断点 + Resume')
+  resumeBtn.disabled = true
+  showCode('step5', 'F8 快速跳转断点')
+  tip('多个断点场景，按 <kbd>F8</kbd>(Resume) 直接跳到下一处暂停位置')
 
-  // ⑨ 接下来连续遇到多个 debugger
-  // 按 F8（Resume）直接跳到下一个 debugger，不用反复按 F10
+  // F8(Resume)：跳过中间代码，直达下一个debugger断点
   debugger
-
   let x = 1
-  x = x * 2
-
-  // ⑩ 第一个暂停
-  // Scope > Local: x = 2
+  x *= 2
+  
+  // ✅ 按 F8(Resume) 跳到下一个断点，
   debugger
-
-  x = x * 3
-
-  // ⑪ 第二个暂停
-  // Scope > Local: x = 6
+  
+  x *= 3
+  
+  // ✅ 按 F8(Resume) 跳到下一个断点，
   debugger
-
-  x = x * 4
-
-  // ⑫ 第三个暂停
-  // Scope > Local: x = 24
+  
+  x *= 4
+  
+  // ✅ 按 F8(Resume) 跳到下一个断点，
   debugger
-
+  
   const final = x
-
-  // ⑬ 最终结果
-  // Scope > Local: final = 24, x = 24
+  
+  // ✅【全部教程结束：按 F8(Resume) 结束本次调试，】
   debugger
 
-  log('Resume 练习完成 ✓')
-  tip('全部练习已结束！现在去第 1 章学习 Vue 响应式系统吧 🎉')
-  document.getElementById('resumeBtn').disabled = true
+  log('✅ F8 断点跳转练习完成！')
+  tip('🎉 第0章调试入门全部学完，仅掌握 F8/F10/F11 三大核心快捷键')
 }
-
 </script>
-
 </body>
 </html>

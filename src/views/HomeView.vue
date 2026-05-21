@@ -280,6 +280,7 @@ const chapters = [
 
 /* ===== 调试指南 — 便利贴 ===== */
 .guide {
+  margin-top: 3.5rem;
   margin-bottom: 3.5rem;
 }
 .guide-title {
