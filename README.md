@@ -11,7 +11,7 @@ pnpm install
 pnpm dev        # 开发，浏览器打开 http://localhost:5173
 ```
 
-## 使用方式
+## 使用方式（不会debug看里面有视频演示）
 
 1. 打开 **Chrome 浏览器**（其他浏览器 debugger 体验不一致）
 2. 按 `F12` 打开 DevTools → **Sources** 面板
