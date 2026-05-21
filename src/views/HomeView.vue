@@ -13,8 +13,8 @@
           <span class="hero-main">一步一步 Debug 给你看</span>
         </h1>
         <p class="hero-desc">
-          每一行核心代码都嵌入了 <code>debugger</code>，需要 <strong class="text-chrome">Chrome</strong> DevTools Sources 面板<br>
-          打开 F12，选择章节，跟着按钮一步步步进调试。
+          打开 <strong class="text-chrome">Chrome</strong> 的<strong class="text-Sources">DevTools Sources 面板</strong><br>
+          <p class="debug-desc">行号前面打断点，按F10步进观察，按resume中间代码自动跑完，直接停在下一个断点，如果没有断点，就正常运行了</p>
         </p>
       </section>
 
@@ -150,9 +150,23 @@ const chapters = [
   margin: 1rem auto 0;
   line-height: 1.7;
 }
+
+.debug-desc {
+  color: #5e8a76;
+  font-size: 0.92rem;
+  max-width: 920px;
+  margin: 0 auto 0;
+
+}
+
 .text-chrome {
   color: #f59e0b;
 }
+
+.text-Sources{
+  color: #289bed;
+}
+
 .hero-desc code {
   display: inline-block;
   font-family: 'JetBrains Mono', monospace;
