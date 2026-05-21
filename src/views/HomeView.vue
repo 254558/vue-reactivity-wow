@@ -12,10 +12,10 @@
           <span class="hero-sub">深入 Vue 核心原理</span>
           <span class="hero-main">一步一步 Debug 给你看</span>
         </h1>
-        <p class="hero-desc">
+        <div class="hero-desc">
           打开 <strong class="text-chrome">Chrome</strong> 的<strong class="text-Sources">DevTools Sources 面板</strong><br>
-          <p class="debug-desc">行号前面打断点，按F10步进观察，按resume中间代码自动跑完，直接停在下一个断点，如果没有断点，就正常运行了</p>
-        </p>
+          <div class="debug-desc">行号前面打断点，按F10步进观察，按resume中间代码自动跑完，直接停在下一个断点，如果没有断点，就正常运行了</div>
+        </div>
       </section>
 
       <!-- 章节网格 -->
