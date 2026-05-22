@@ -21,6 +21,7 @@
       align-items: center;
       justify-content: center;
       padding: 30px;
+      overflow: hidden;
     }
 
     .panel {
@@ -140,8 +141,29 @@
       rotate: -9deg;
     }
 
-    #dragNote b {
+    /* 右边新增便利贴样式 */
+    #microTaskNote {
+      position: fixed;
+      top: 40px;
+      right: 40px;
+      width: 330px;
+      background: #d1f9d1;
+      color: #1e1e1e;
+      padding: 18px;
+      line-height: 1.9;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      z-index: 999;
+      cursor: grab;
+      user-select: none;
+      font-size: 14px;
+    }
+
+    #dragNote b, #microTaskNote b {
       color: #c62828;
+    }
+    #microTaskNote .step {
+      color: #1565c0;
+      font-weight: bold;
     }
   </style>
 </head>
@@ -165,178 +187,127 @@
   只停在当前自己的代码里！
 </div>
 
+<!-- 右侧讲解贴 -->
+<div id="microTaskNote">
+渲染函数不是count++<br>是 num.innerText = state.count<br>
+哪句能让屏幕发生变化，哪句就是渲染函数<br>
+<br>
+<b>count++，count++，count++</b><br>
+→ 打开饿了么挑吃的<br>
+<b>trigger</b><br>
+→ 系统识别到下单操作<br>
+<b>queueJob</b><br>
+→ 记下你要哪几样<br>
+<b>Promise.then</b><br>
+→ 点完就给彻底下单了<br>
+
+<b>flushJobs</b><br>
+→ 正在配送<br>
+<b>render</b><br>
+→ 给你放门口了吃去吧<br>
+<br>
+<b>而不是你点一道菜给你送一次，点一道送一次</b>
+</div>
+
 <div class="panel">
-
   <h1>Vue3 Scheduler</h1>
-
   <div class="desc">
     连续修改响应式数据 3 次<br>
     但渲染只会执行 1 次
   </div>
-
   <div class="num" id="num">0</div>
-
   <div class="stats">
-
     <div class="card">
       <div class="label">渲染次数</div>
       <div class="value" id="renderCount">0</div>
     </div>
-
     <div class="card">
       <div class="label">任务队列数量</div>
       <div class="value" id="queueSize">0</div>
     </div>
-
   </div>
-
   <div class="btns">
-    <button id="initBtn" onclick="init()">
-      初始化
-    </button>
-
-    <button id="addBtn" disabled>
-      连续 +3
-    </button>
+    <button id="initBtn" onclick="init()">初始化</button>
+    <button id="addBtn" disabled>连续 +3</button>
   </div>
-
   <div class="tip">
     推荐调试顺序：<br>
     count++ → trigger → scheduler → queue → microtask → render
   </div>
-
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/draggabilly@3/dist/draggabilly.pkgd.min.js"></script>
-
 <script>
 new Draggabilly('#dragNote')
+new Draggabilly('#microTaskNote') // 右侧贴也支持拖拽
 
 // ======================================================
 // 全局变量
 // ======================================================
-
 let activeEffect = null
-
-// target -> key -> effects
 const depStore = new Map()
-
 let state = null
-
 let renderTimes = 0
 
 // ======================================================
 // Scheduler
 // ======================================================
-
-// 任务队列（Set 自动去重）
 const taskQueue = new Set()
-
-// 是否正在等待刷新
 let isFlushing = false
-
-// 微任务
 const resolvedPromise = Promise.resolve()
 
 // ======================================================
 // effect
 // ======================================================
-
 function effect(fn) {
-
   function effectFn() {
-
-    // effect 每次执行都会重新收集依赖
     activeEffect = effectFn
-
     fn()
-
     activeEffect = null
   }
-
-  // 固定绑定调度器
   effectFn.scheduler = queueJob
-
-  // 首次执行
   effectFn()
 }
 
 // ======================================================
 // track
 // ======================================================
-
 function track(target, key) {
-
   if (!activeEffect) return
-
-  // targetMap
-  if (!depStore.has(target)) {
-    depStore.set(target, new Map())
-  }
-
+  if (!depStore.has(target)) depStore.set(target, new Map())
   const keyMap = depStore.get(target)
-
-  // deps
-  if (!keyMap.has(key)) {
-    keyMap.set(key, new Set())
-  }
-
+  if (!keyMap.has(key)) keyMap.set(key, new Set())
   const effects = keyMap.get(key)
-
   effects.add(activeEffect)
 }
 
 // ======================================================
 // trigger
 // ======================================================
-
 function trigger(target, key) {
-
   const keyMap = depStore.get(target)
-
   if (!keyMap) return
-
   const effects = keyMap.get(key)
-
   if (!effects) return
-
   debugger
-  // 数据变化
-  // trigger 开始触发更新
-
-  // 克隆一份，避免执行时修改原集合
   const effectsToRun = new Set(effects)
-
   effectsToRun.forEach(effectFn => {
-
-    // 不立刻执行
-    // 而是进入调度器
     effectFn.scheduler(effectFn)
-
   })
 }
 
 // ======================================================
 // reactive
 // ======================================================
-
 function reactive(obj) {
-
   return new Proxy(obj, {
-
     get(target, key) {
-
       track(target, key)
-
       return target[key]
     },
-
     set(target, key, value) {
-
       target[key] = value
-
       trigger(target, key)
-
       return true
     }
   })
@@ -345,41 +316,17 @@ function reactive(obj) {
 // ======================================================
 // queueJob
 // ======================================================
-
 function queueJob(job) {
-
-  // 加入任务队列
-  // Set 自动去重
   taskQueue.add(job)
-
   queueSize.innerText = taskQueue.size
-
   debugger
-  // job 入队
-  // 即使 add 3 次
-  // Set 里也只有 1 个
-
-  // 已经在等待刷新
   if (isFlushing) return
-
   isFlushing = true
-
-  // 微任务批量执行
   resolvedPromise.then(() => {
-
     debugger
-    // flushJobs
-    // 开始批量执行任务
-
-    taskQueue.forEach(job => {
-      job()
-    })
-
-    // 清空队列
+    taskQueue.forEach(job => job())
     taskQueue.clear()
-
     queueSize.innerText = 0
-
     isFlushing = false
   })
 }
@@ -387,23 +334,13 @@ function queueJob(job) {
 // ======================================================
 // init
 // ======================================================
-
 function init() {
-
-  state = reactive({
-    count: 0
-  })
-
+  state = reactive({ count: 0 })
   effect(() => {
-
     debugger
-    // render
-
     num.innerText = state.count
-
     renderCount.innerText = ++renderTimes
   })
-
   initBtn.disabled = true
   addBtn.disabled = false
 }
@@ -411,17 +348,12 @@ function init() {
 // ======================================================
 // 连续修改 3 次
 // ======================================================
-
 addBtn.onclick = () => {
-
   debugger
-  // 开始修改数据
-
   state.count++
   state.count++
   state.count++
 }
 </script>
-
 </body>
 </html>
