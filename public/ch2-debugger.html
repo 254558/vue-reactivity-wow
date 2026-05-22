@@ -1,270 +1,427 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vue 调度系统（Debugger版）</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vue3 Scheduler</title>
 
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: system-ui, sans-serif;
       background: #070b09;
       color: #d0e4da;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       min-height: 100vh;
-      padding: 40px;
-    }
-    .box {
-      background: #0d1612;
-      border: 1px solid #1a2e25;
-      border-radius: 12px;
-      padding: 40px;
-      width: 560px;
-      text-align: center;
-    }
-    .num-display {
-      font-size: 3rem;
-      font-weight: 900;
-      color: #10b981;
-      margin: 20px 0;
-      font-family: monospace;
-    }
-    .stat-row {
       display: flex;
+      align-items: center;
       justify-content: center;
-      gap: 20px;
-      margin: 20px 0;
+      padding: 30px;
     }
-    .stat {
+
+    .panel {
+      width: 460px;
+      background: #0d1612;
+      border: 1px solid #1d3128;
+      border-radius: 20px;
+      padding: 32px;
+      box-shadow:
+        0 10px 40px rgba(0,0,0,0.35),
+        inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 10px;
+      color: #e8fff4;
+    }
+
+    .desc {
+      text-align: center;
+      color: #5f8b76;
+      font-size: 14px;
+      line-height: 1.8;
+      margin-bottom: 28px;
+    }
+
+    .num {
+      font-size: 72px;
+      font-weight: 900;
+      text-align: center;
+      color: #10b981;
+      margin: 24px 0;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .card {
       background: #0a100d;
       border: 1px solid #1a2e25;
-      padding: 10px 16px;
-      border-radius: 8px;
-      min-width: 120px;
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
     }
-    .label { font-size: 12px; color: #5e8a76; }
-    .val { font-size: 20px; font-weight: 700; }
-    .bad { color: #ef4444; }
-    .good { color: #10b981; }
+
+    .label {
+      font-size: 12px;
+      color: #5f8b76;
+      margin-bottom: 8px;
+    }
+
+    .value {
+      font-size: 28px;
+      font-weight: 800;
+      color: #10b981;
+    }
+
+    .btns {
+      display: flex;
+      gap: 12px;
+    }
 
     button {
-      margin: 8px;
-      padding: 10px 16px;
+      flex: 1;
       border: none;
-      border-radius: 8px;
-      cursor: pointer;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
       font-weight: 700;
+      cursor: pointer;
+      background: #10b981;
       color: white;
+      transition: 0.2s;
     }
-    .sync { background: #ef4444; }
-    .async { background: #2563eb; }
-    .init { background: #6b7280; }
 
-    button:disabled { opacity: 0.4; }
+    button:hover {
+      transform: translateY(-2px);
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .tip {
+      margin-top: 22px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #0a100d;
+      border: 1px solid #1a2e25;
+      color: #7aa38f;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    #dragNote {
+      position: fixed;
+      top: 40px;
+      left: 40px;
+      width: 280px;
+      background: #f5ed8c;
+      color: #1e1e1e;
+      padding: 18px;
+      line-height: 1.9;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      z-index: 999;
+      cursor: grab;
+      user-select: none;
+      font-size: 14px;
+      rotate: -9deg;
+    }
+
+    #dragNote b {
+      color: #c62828;
+    }
   </style>
 </head>
-
 <body>
-<div class="box">
-  <h1>Vue 调度系统 Debugger</h1>
 
-  <div class="num-display" id="num">0</div>
-
-  <div class="stat-row">
-    <div class="stat">
-      <div class="label">同步渲染</div>
-      <div class="val bad" id="syncCount">0</div>
-    </div>
-
-    <div class="stat">
-      <div class="label">调度器渲染</div>
-      <div class="val good" id="asyncCount">0</div>
-    </div>
-  </div>
-
-  <button class="init" id="setupBtn" onclick="setup()">初始化</button>
-  <button class="sync" id="syncBtn" onclick="changeSync()" disabled>同步 x3</button>
-  <button class="async" id="asyncBtn" onclick="changeAsync()" disabled>调度器 x3</button>
+<!-- 调试 Ignore 便利贴（可拖拽） -->
+<div id="dragNote">
+  <b>调试不跳 client：设置 Ignore 清单</b><br><br>
+  1. F12 → 右上角 ⚙️ 设置<br>
+  2. 找到 <b>Ignore List</b>（忽略清单）<br>
+  3. 依次添加以下规则：<br><br>
+  <b>必加：</b><br>
+  • client:*<br>
+  • chrome:*<br>
+  • chrome-extension:*<br>
+  • ^node:<br>
+  • jsdelivr<br>
+  • draggabilly<br><br>
+  <b>作用：</b><br>
+  调试时<b>不跳进浏览器底层</b><br>
+  只停在当前自己的代码里！
 </div>
 
+<div class="panel">
+
+  <h1>Vue3 Scheduler</h1>
+
+  <div class="desc">
+    连续修改响应式数据 3 次<br>
+    但渲染只会执行 1 次
+  </div>
+
+  <div class="num" id="num">0</div>
+
+  <div class="stats">
+
+    <div class="card">
+      <div class="label">渲染次数</div>
+      <div class="value" id="renderCount">0</div>
+    </div>
+
+    <div class="card">
+      <div class="label">任务队列数量</div>
+      <div class="value" id="queueSize">0</div>
+    </div>
+
+  </div>
+
+  <div class="btns">
+    <button id="initBtn" onclick="init()">
+      初始化
+    </button>
+
+    <button id="addBtn" disabled>
+      连续 +3
+    </button>
+  </div>
+
+  <div class="tip">
+    推荐调试顺序：<br>
+    count++ → trigger → scheduler → queue → microtask → render
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/draggabilly@3/dist/draggabilly.pkgd.min.js"></script>
+
 <script>
+new Draggabilly('#dragNote')
+
+// ======================================================
+// 全局变量
+// ======================================================
 
 let activeEffect = null
-const bucket = new Map()
+
+// target -> key -> effects
+const depStore = new Map()
+
 let state = null
 
-let syncRenderCount = 0
-let asyncRenderCount = 0
+let renderTimes = 0
 
-function effect(fn, options = {}) {
-  const effectFn = () => {
+// ======================================================
+// Scheduler
+// ======================================================
+
+// 任务队列（Set 自动去重）
+const taskQueue = new Set()
+
+// 是否正在等待刷新
+let isFlushing = false
+
+// 微任务
+const resolvedPromise = Promise.resolve()
+
+// ======================================================
+// effect
+// ======================================================
+
+function effect(fn) {
+
+  function effectFn() {
+
+    // effect 每次执行都会重新收集依赖
     activeEffect = effectFn
-    fn()
 
-    // ① effect 执行完毕
-    // Scope > Script: activeEffect 仍指向 effectFn（还没清空）
-    debugger
+    fn()
 
     activeEffect = null
   }
 
-  effectFn.options = options
+  // 固定绑定调度器
+  effectFn.scheduler = queueJob
+
+  // 首次执行
   effectFn()
 }
 
+// ======================================================
+// track
+// ======================================================
+
 function track(target, key) {
+
   if (!activeEffect) return
 
-  let depsMap = bucket.get(target)
-  if (!depsMap) {
-    depsMap = new Map()
-    bucket.set(target, depsMap)
+  // targetMap
+  if (!depStore.has(target)) {
+    depStore.set(target, new Map())
   }
 
-  let deps = depsMap.get(key)
-  if (!deps) {
-    deps = new Set()
-    depsMap.set(key, deps)
+  const keyMap = depStore.get(target)
+
+  // deps
+  if (!keyMap.has(key)) {
+    keyMap.set(key, new Set())
   }
 
-  deps.add(activeEffect)
+  const effects = keyMap.get(key)
+
+  effects.add(activeEffect)
 }
 
-function trigger(target, key) {
-  const depsMap = bucket.get(target)
-  if (!depsMap) return
+// ======================================================
+// trigger
+// ======================================================
 
-  const effects = depsMap.get(key)
+function trigger(target, key) {
+
+  const keyMap = depStore.get(target)
+
+  if (!keyMap) return
+
+  const effects = keyMap.get(key)
+
   if (!effects) return
 
-  effects.forEach(fn => {
-    // ② trigger 判断执行方式
-    // Scope > Local: fn = 当前 effect，展开 fn.options 看 scheduler 是否存在
-    debugger
+  debugger
+  // 数据变化
+  // trigger 开始触发更新
 
-    if (fn.options.scheduler) {
-      // ③ 有 scheduler → 走异步调度分支
-      // Scope > Local: fn.options.scheduler = queueJob
-      // fn 不会立即执行，而是交给 scheduler 排队
-      debugger
+  // 克隆一份，避免执行时修改原集合
+  const effectsToRun = new Set(effects)
 
-      fn.options.scheduler(fn)
-    } else {
-      // ④ 无 scheduler → 同步执行
-      // Scope > Local: fn.options 中没有 scheduler
-      // fn 立即执行，页面马上更新
-      debugger
+  effectsToRun.forEach(effectFn => {
 
-      fn()
-    }
+    // 不立刻执行
+    // 而是进入调度器
+    effectFn.scheduler(effectFn)
+
   })
 }
 
-function reactive(data) {
-  return new Proxy(data, {
+// ======================================================
+// reactive
+// ======================================================
+
+function reactive(obj) {
+
+  return new Proxy(obj, {
+
     get(target, key) {
+
       track(target, key)
+
       return target[key]
     },
-    set(target, key, val) {
-      target[key] = val
+
+    set(target, key, value) {
+
+      target[key] = value
+
       trigger(target, key)
+
       return true
     }
   })
 }
 
-const jobQueue = new Set()
-const p = Promise.resolve()
-let isFlushing = false
+// ======================================================
+// queueJob
+// ======================================================
 
-function queueJob(fn) {
-  jobQueue.add(fn)
+function queueJob(job) {
 
-  // ⑤ job 已入队
-  // Scope > Script: 展开 jobQueue > [[Entries]]，里面有 1 个 fn
-  // Set 自动去重：同一个 fn 多次 add 只保留一个
+  // 加入任务队列
+  // Set 自动去重
+  taskQueue.add(job)
+
+  queueSize.innerText = taskQueue.size
+
   debugger
+  // job 入队
+  // 即使 add 3 次
+  // Set 里也只有 1 个
 
-  if (!isFlushing) {
-    isFlushing = true
-    p.then(flushJob)
-  }
+  // 已经在等待刷新
+  if (isFlushing) return
 
-  // ⑥ 微任务已注册
-  // Scope > Script: isFlushing = true，后续 trigger 不会重复注册 flushJob
-  debugger
-}
+  isFlushing = true
 
-function flushJob() {
-  const jobs = [...jobQueue]
-  jobQueue.clear()
-  isFlushing = false
+  // 微任务批量执行
+  resolvedPromise.then(() => {
 
-  // ⑦ 微任务开始批量执行
-  // Scope > Local: jobs = 从队列中取出的 effect 数组
-  // 无论 trigger 了几次，jobQueue 去重后只会有 1 个 job → 页面只更新 1 次
-  debugger
+    debugger
+    // flushJobs
+    // 开始批量执行任务
 
-  jobs.forEach(fn => {
-    fn()
+    taskQueue.forEach(job => {
+      job()
+    })
+
+    // 清空队列
+    taskQueue.clear()
+
+    queueSize.innerText = 0
+
+    isFlushing = false
   })
 }
 
-function setup() {
-  document.getElementById('setupBtn').disabled = true
+// ======================================================
+// init
+// ======================================================
 
-  state = reactive({ count: 0 })
+function init() {
+
+  state = reactive({
+    count: 0
+  })
 
   effect(() => {
-    document.getElementById('num').innerText = state.count
-    syncRenderCount++
-    document.getElementById('syncCount').innerText = syncRenderCount
+
+    debugger
+    // render
+
+    num.innerText = state.count
+
+    renderCount.innerText = ++renderTimes
   })
 
-  effect(() => {
-    document.getElementById('num').innerText = state.count
-    asyncRenderCount++
-    document.getElementById('asyncCount').innerText = asyncRenderCount
-  }, {
-    scheduler: queueJob
-  })
-
-  // ⑧ 初始化完成
-  // Scope > Script: state = Proxy{count:0}
-  // bucket 中 "count" 对应的 Set 里有 2 个 effect（1 个同步、1 个带 scheduler）
-  debugger
-
-  document.getElementById('syncBtn').disabled = false
-  document.getElementById('asyncBtn').disabled = false
+  initBtn.disabled = true
+  addBtn.disabled = false
 }
 
-function changeSync() {
-  // ⑨ 同步修改 x3
-  // 按 F8 继续：3 次 state.count++ → 3 次 trigger → 同步 effect 执行 3 次
-  // 观察页面上「同步渲染」计数 +3
+// ======================================================
+// 连续修改 3 次
+// ======================================================
+
+addBtn.onclick = () => {
+
   debugger
+  // 开始修改数据
 
   state.count++
   state.count++
   state.count++
 }
-
-function changeAsync() {
-  // ⑩ 调度器修改 x3
-  // 按 F8 继续：3 次 state.count++ → 3 次 trigger → 但 scheduler 去重
-  // jobQueue 只有 1 个 job → 微任务只渲染 1 次
-  // 观察页面上「调度器渲染」计数只 +1
-  debugger
-
-  state.count++
-  state.count++
-  state.count++
-}
-
 </script>
+
 </body>
 </html>
