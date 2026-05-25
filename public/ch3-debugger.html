@@ -1,262 +1,361 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vue 计算属性（Debugger版）</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue 计算属性（Debugger修复版）</title>
 
-<style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body {
-    font-family: system-ui, sans-serif;
-    background:#070b09;
-    color:#d0e4da;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    min-height:100vh;
-    padding:40px;
-  }
-  .box {
-    width:560px;
-    background:#0d1612;
-    border:1px solid #1a2e25;
-    border-radius:12px;
-    padding:40px;
-    text-align:center;
-  }
-  .display {
-    background:#0a100d;
-    border:1px solid #1a2e25;
-    padding:16px;
-    border-radius:8px;
-    margin:20px 0;
-    font-family:monospace;
-  }
-  .val { font-size:20px; margin:6px 0; }
-  .count { color:#f59e0b; }
-  .computed { color:#10b981; }
-  .dirty { color:#ef4444; }
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-  button {
-    margin:6px;
-    padding:10px 14px;
-    border:none;
-    border-radius:8px;
-    color:white;
-    font-weight:700;
-    cursor:pointer;
-  }
-  .init { background:#6b7280; }
-  .read { background:#10b981; }
-  .modify { background:#ef4444; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #070b09;
+      color: #d0e4da;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 40px;
+    }
 
-  button:disabled { opacity:0.4; }
-</style>
+    .box {
+      width: 560px;
+      background: #0d1612;
+      border: 1px solid #1a2e25;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .notice {
+      background: #ef444422;
+      border: 1px solid #ef4444;
+      color: #f87171;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .display {
+      background: #0a100d;
+      border: 1px solid #1a2e25;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-family: monospace;
+    }
+
+    .val {
+      font-size: 20px;
+      margin: 6px 0;
+    }
+
+    .count {
+      color: #f59e0b;
+    }
+
+    .computed {
+      color: #10b981;
+    }
+
+    .dirty {
+      color: #ef4444;
+    }
+
+    button {
+      margin: 6px;
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .init {
+      background: #6b7280;
+    }
+
+    .read {
+      background: #10b981;
+    }
+
+    .modify {
+      background: #ef4444;
+    }
+
+    button:disabled {
+      opacity: 0.2;
+      cursor: not-allowed;
+    }
+
+    #computedNote {
+      position: fixed;
+      top: 40px;
+      left: 40px;
+      width: 300px;
+      background: #c1d5ed;
+      color: #1e1e1e;
+      padding: 18px;
+      line-height: 1.9;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      z-index: 999;
+      cursor: grab;
+      user-select: none;
+      font-size: 14px;
+      rotate: -2deg;
+    }
+
+    #computedNote b {
+      color: #c62828;
+    }
+  </style>
 </head>
 
 <body>
+  <script src="https://cdn.jsdelivr.net/npm/draggabilly@3/dist/draggabilly.pkgd.min.js"></script>
 
-<div class="box">
-  <h1>Vue 计算属性 Debugger</h1>
-
-  <div class="display">
-    <div class="val count">state.count: <span id="count">0</span></div>
-    <div class="val computed">computed: <span id="computed">-</span></div>
-    <div class="val dirty">dirty: <span id="dirty">true</span></div>
-    <div class="val">getter执行次数: <span id="calls">0</span></div>
+  <div id="computedNote">
+    <b>1. 初始化</b><br>
+    创建响应式数据 + 计算属性（Lazy 模式）<br>
+    <b>此时不执行 getter</b>，不收集依赖，dirty=true<br><br>
+    <b>2. 读取 computed</b><br>
+    <b>真正第一次计算</b> + 触发依赖收集 + 缓存<br>
+    dirty 变 false，执行次数+1<br><br>
+    <b>3. 再次读取（缓存）</b><br>
+    <b>直接返回缓存</b>，内部不重新执行计算<br><br>
+    <b>4. 修改 count</b><br>
+    触发依赖的 <b>scheduler</b>，仅标记 dirty=true<br>
+    <b>不立即重新计算</b>（懒求值）<br><br>
+    <b>5. 修改后重新读取</b><br>
+    因为 dirty=true 触发<b>重新求值</b>并更新缓存
   </div>
 
-  <button class="init" onclick="init()" id="initBtn">初始化</button>
-  <button class="read" onclick="read1()" id="r1" disabled>读取computed</button>
-  <button class="read" onclick="read2()" id="r2" disabled>再次读取（缓存）</button>
-  <button class="modify" onclick="inc()" id="inc" disabled>修改count</button>
-  <button class="read" onclick="read3()" id="r3" disabled>修改后读取</button>
-</div>
+  <div class="box">
+    <div class="notice">⚠️ 演示前请先按 F12 打开开发者工具source面板！</div>
+    <h1>Vue 计算属性 Debugger</h1>
 
-<script>
+    <div class="display">
+      <div class="val count">state.count: <span id="count">0</span></div>
+      <div class="val computed">computed: <span id="computed">-</span></div>
+      <div class="val dirty">dirty: <span id="dirty">true</span></div>
+      <div class="val">getter真实执行次数: <span id="calls">0</span></div>
+    </div>
 
-let activeEffect = null
-const bucket = new Map()
-let state = null
+    <button class="init" onclick="init()" id="initBtn">1. 初始化</button>
+    <button class="read" onclick="read1()" id="r1" disabled>2. 读取computed</button>
+    <button class="read" onclick="read2()" id="r2" disabled>3. 再次读取（缓存）</button>
+    <button class="modify" onclick="inc()" id="inc" disabled>4. 修改count</button>
+    <button class="read" onclick="read3()" id="r3" disabled>5. 修改后读取</button>
+  </div>
 
-function effect(fn, options = {}) {
-  const e = () => {
-    activeEffect = e
-    const res = fn()
-    activeEffect = null
-    return res
-  }
-  e.options = options
-  e()
-  return e
-}
+  <script>
+    // 启用便利贴拖拽
+    new Draggabilly('#computedNote');
 
-function track(target, key) {
-  if (!activeEffect) return
+    let activeEffect = null
+    const bucket = new Map()
+    let state = null
+    let c = null
+    let callCount = 0 // 把执行计数器移到外部，方便 UI 渲染和逻辑对齐
 
-  let map = bucket.get(target)
-  if (!map) { map = new Map(); bucket.set(target, map) }
-
-  let deps = map.get(key)
-  if (!deps) { deps = new Set(); map.set(key, deps) }
-
-  deps.add(activeEffect)
-}
-
-function trigger(target, key) {
-  const map = bucket.get(target)
-  if (!map) return
-
-  const deps = map.get(key)
-  if (!deps) return
-
-  deps.forEach(fn => {
-    // ① trigger 判断执行方式
-    // Scope > Local: fn = 当前 effect，展开 fn.options 看 scheduler 是否存在
-    debugger
-
-    if (fn.options.scheduler) {
-      // ② 走 scheduler 分支（computed 的 effect）
-      // Scope > Local: fn.options.scheduler 存在
-      // 不会重新执行 getter，只标记 dirty=true（懒计算）
-      debugger
-
-      fn.options.scheduler(fn)
-    } else {
-      fn()
-    }
-  })
-}
-
-function reactive(obj) {
-  return new Proxy(obj, {
-    get(t, k) { track(t, k); return t[k] },
-    set(t, k, v) {
-      t[k] = v
-      trigger(t, k)
-      return true
-    }
-  })
-}
-
-function computed(getter) {
-  let dirty = true
-  let value
-  let callCount = 0
-
-  const runner = effect(getter, {
-    scheduler() {
-      dirty = true
-      document.getElementById('dirty').innerText = 'true'
-
-      // ③ scheduler 被调用（依赖变化时）
-      // Scope > Closure: dirty = true（刚被标记），value 是旧缓存值
-      // 注意：没有执行 getter！下次读取 .value 时才会重新计算
-      debugger
-    }
-  })
-
-  return {
-    get value() {
-      // ④ 读取 computed.value
-      // Scope > Closure: dirty = true 或 false
-      // dirty=true → 走计算分支，dirty=false → 走缓存分支
-      debugger
-
-      if (dirty) {
-        value = runner()
-        callCount++
-        document.getElementById('calls').innerText = callCount
-
-        dirty = false
-        document.getElementById('dirty').innerText = 'false'
-
-        // ⑤ 计算完成
-        // Scope > Closure: dirty = false，value = 新计算的值，callCount +1
-        debugger
-
-      } else {
-        // ⑥ 命中缓存
-        // Scope > Closure: dirty = false，直接返回上次缓存的 value
-        // getter 不执行 — 这就是 computed 的性能优化
-        debugger
+    function effect(fn, options = {}) {
+      const e = () => {
+        activeEffect = e
+        const res = fn()
+        activeEffect = null
+        return res
       }
-
-      return value
+      e.options = options
+      // 🌟 【修复点 1】支持 lazy 选项，如果是 lazy (如 computed) 则初始化时不立即执行
+      if (!options.lazy) {
+        e()
+      }
+      return e
     }
-  }
-}
 
-let c = null
+    function track(target, key) {
+      if (!activeEffect) return
 
-function init() {
-  document.getElementById('initBtn').disabled = true
+      let map = bucket.get(target)
+      if (!map) { map = new Map(); bucket.set(target, map) }
 
-  state = reactive({ count: 0 })
+      let deps = map.get(key)
+      if (!deps) { deps = new Set(); map.set(key, deps) }
 
-  c = computed(() => {
-    return state.count * 2
-  })
+      deps.add(activeEffect)
+    }
 
-  // ⑦ 初始化完成
-  // Scope > Script: state = Proxy{count:0}，c = computed 对象
-  // 注意：dirty 仍然是 true！effect 初始化只是收集了依赖，并没有计算 value
-  // 要等第一次读取 c.value 时才会执行 getter 并缓存结果
-  debugger
+    function trigger(target, key) {
+      const map = bucket.get(target)
+      if (!map) return
 
-  document.getElementById('r1').disabled = false
-  document.getElementById('r2').disabled = false
-  document.getElementById('inc').disabled = false
-  document.getElementById('r3').disabled = false
-}
+      const deps = map.get(key)
+      if (!deps) return
 
-function render(computedValue) {
-  document.getElementById('count').innerText = state.count
-  if (computedValue !== undefined) {
-    document.getElementById('computed').innerText = computedValue
-  }
-}
+      deps.forEach(fn => {
+        console.log('%c[trigger] 检测到依赖变化，判断执行机制...', 'color: #f59e0b; font-weight: bold;');
+        // ① trigger 判断执行方式
+        // 展开右侧面板 Scope > Local 查看 fn.options.scheduler 
+        debugger
 
-function read1() {
-  // ⑧ 首次读取 computed.value
-  // Scope > Script: dirty = true（还没读取过 .value）
-  // 按 F8 继续后：c.value 进入 getter → dirty=true → 走计算分支 → 执行 runner() → 缓存结果
-  debugger
+        if (fn.options.scheduler) {
+          console.log('%c[trigger] 命中依赖的 scheduler，走懒计算路线！不执行 getter', 'color: #ef4444; font-weight: bold;');
+          // ② 走 scheduler 分支（computed 的 effect）
+          debugger
 
-  const v = c.value
-  render(v)
-}
+          fn.options.scheduler(fn)
+        } else {
+          fn()
+        }
+      })
+    }
 
-function read2() {
-  // ⑨ 再次读取 computed.value
-  // Scope > Script: dirty 仍然是 false → 命中缓存，getter 不执行
-  debugger
+    function reactive(obj) {
+      return new Proxy(obj, {
+        get(t, k) { track(t, k); return t[k] },
+        set(t, k, v) {
+          t[k] = v
+          trigger(t, k)
+          return true
+        }
+      })
+    }
 
-  const v = c.value
-  render(v)
-}
+    function computed(getter) {
+      let dirty = true
+      let value
 
-function inc() {
-  // ⑩ 修改 state.count
-  // 按 F8 继续后：set → trigger → computed 的 scheduler → dirty 变 true
-  // 但此时不会重新计算！要等到下次读取 .value 才算
-  debugger
+      // 🌟 【修复点 2】传入 lazy: true 保证计算属性的“惰性求值”
+      const runner = effect(getter, {
+        lazy: true,
+        scheduler() {
+          dirty = true
+          document.getElementById('dirty').innerText = 'true'
 
-  state.count++
-  render()
-}
+          console.log('%c[scheduler] 标记 dirty = true。注意：此时没有执行 getter 重新计算，等待下次被读取。', 'color: #ef4444;');
+          // ③ scheduler 被调用（依赖变化时）
+          // Scope > Closure 查看：dirty = true, value 是上一次的旧缓存
+          debugger
+        }
+      })
 
-function read3() {
-  // ⑪ 修改后读取 computed.value
-  // Scope > Script: dirty = true（被 scheduler 标记了）→ 走计算分支
-  // runner() 重新执行 getter，得到新值
-  debugger
+      return {
+        get value() {
+          console.log('%c[get value] 尝试读取 computed.value...', 'color: #10b981; font-weight: bold;');
+          // ④ 读取 computed.value
+          // Scope > Closure 查看当前 dirty 的状态
+          debugger
 
-  const v = c.value
-  render(v)
-}
+          if (dirty) {
+            console.log('%c[get value] dirty 为 true 🚀 触发真实计算 (执行 runner)', 'color: #10b981;');
+            
+            // 🌟 【修复点 3】真实触发计算并让底层拦截器正确收集 activeEffect
+            value = runner() 
+            callCount++
+            document.getElementById('calls').innerText = callCount
 
-</script>
+            dirty = false
+            document.getElementById('dirty').innerText = 'false'
+
+            // ⑤ 计算完成
+            // Scope > Closure 查看：dirty 变成 false，缓存已更新
+            debugger
+          } else {
+            console.log('%c[get value] dirty 为 false 📦 命中缓存，直接返回旧值，跳过计算', 'color: #6b7280; font-weight: bold;');
+            // ⑥ 命中缓存
+            debugger
+          }
+
+          return value
+        }
+      }
+    }
+
+    // 教学按钮交互控制
+    function init() {
+      document.getElementById('initBtn').disabled = true
+      state = reactive({ count: 0 })
+
+      c = computed(() => {
+        // 当执行这一行时，检查外部的 activeEffect 是否是 computed 的 runner
+        return state.count * 2
+      })
+
+      console.log('%c[1. 初始化] 成功。响应式数据与 computed 创建完毕。', 'color: #a4c8f3; font-weight: bold; font-size: 14px;');
+      console.log('注意：此时由于 Lazy 机制，核心依赖关系尚未建立，运行次数为 0');
+      
+      // ⑦ 初始化完成
+      // Scope > Script 查看 c 的闭包，此时 dirty=true 且真实执行次数为 0
+      debugger
+
+      document.getElementById('r1').disabled = false
+    }
+
+    function render(computedValue) {
+      document.getElementById('count').innerText = state.count
+      if (computedValue !== undefined) {
+        document.getElementById('computed').innerText = computedValue
+      }
+    }
+
+    function read1() {
+      console.log('%c[2. 首次读取] 开始，走计算分支...', 'color: #10b981; font-weight: bold;');
+      // ⑧ 首次读取 computed.value
+      debugger
+
+      const v = c.value
+      render(v)
+
+      document.getElementById('r1').disabled = true
+      document.getElementById('r2').disabled = false
+      document.getElementById('inc').disabled = false
+    }
+
+    function read2() {
+      console.log('%c[3. 再次读取] 开始，走缓存分支...', 'color: #10b981; font-weight: bold;');
+      // ⑨ 再次读取 computed.value
+      debugger
+
+      const v = c.value
+      render(v)
+    }
+
+    function inc() {
+      console.log('%c[4. 修改数据] state.count++', 'color: #ef4444; font-weight: bold;');
+      // ⑩ 修改 state.count
+      // 会触发 set -> trigger -> scheduler
+      debugger
+
+      state.count++
+      render()
+
+      document.getElementById('r2').disabled = true
+      document.getElementById('inc').disabled = true
+      document.getElementById('r3').disabled = false
+    }
+
+    function read3() {
+      console.log('%c[5. 修改后读取] 开始，dirty=true 重新计算...', 'color: #10b981; font-weight: bold;');
+      // ⑪ 修改后读取 computed.value
+      debugger
+
+      const v = c.value
+      render(v)
+      
+      // 重置链路回到可修改状态
+      document.getElementById('inc').disabled = false
+      document.getElementById('r2').disabled = false
+    }
+  </script>
 </body>
+
 </html>
