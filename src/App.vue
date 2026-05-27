@@ -7,7 +7,7 @@
           <div class="brand-icon">
             <img src="./styles/vite.svg" width="24" height="24" alt="logo" />
           </div>
-          <span class="brand-text">一点一点看</span>
+          <span class="brand-text">靠近困难就会变得不幸</span>
         </router-link>
         <!-- GitHub 链接 -->
         <a 
